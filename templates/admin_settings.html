@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2.5rem;">
+    <div>
+        <h1 style="font-size: 2.25rem; margin-bottom: 0.5rem;">System Configuration</h1>
+        <p style="color: var(--text-muted); font-size: 1.125rem;">Global school settings, shifts, and special scheduling overrides.</p>
+    </div>
+</div>
+
+<form action="{{ url_for('admin_settings') }}" method="POST">
+    <!-- General Information Section -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+            <i data-lucide="info" style="width: 20px; color: var(--primary);"></i> Institution Profile
+        </h3>
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+            <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Official School Name</label>
+                <input type="text" name="school_name" value="{{ settings.get('school_name', 'Andres M. Luciano High School') }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; font-family: inherit; font-size: 1rem;">
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Displayed on login, headers, and all official reports.</p>
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Academic Year</label>
+                <input type="text" name="school_year" value="{{ settings.get('school_year', 'S.Y. 2024-2025') }}" placeholder="e.g. S.Y. 2024-2025" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; font-family: inherit; font-size: 1rem;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Days Section -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;">
+            <i data-lucide="calendar" style="width: 20px; color: var(--secondary);"></i> Operational Calendar
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">Select days available for schedule allocation.</p>
+        
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; background: var(--bg-main); padding: 1.25rem; border-radius: 16px;">
+            {% set active_days = settings.get('active_days', 'Monday,Tuesday,Wednesday,Thursday,Friday').split(',') %}
+            {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
+                <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; background: white; padding: 0.75rem 1.25rem; border: 1px solid var(--border); border-radius: 12px; transition: var(--transition); flex: 1; min-width: 140px; justify-content: center;">
+                    <input type="checkbox" name="active_days" value="{{ day }}" {{ 'checked' if day in active_days }} style="width: 20px; height: 20px; accent-color: var(--primary);"> 
+                    <span style="font-weight: 700; font-size: 0.875rem;">{{ day }}</span>
+                </label>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Special Schedule Overrides -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+        <!-- JHS Special -->
+        <div class="card" style="border-top: 4px solid #10b981;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="color: #047857; margin: 0;"><i data-lucide="stars" style="width: 20px; vertical-align: middle;"></i> JHS Special Mode</h3>
+                <label class="switch-premium">
+                    <input type="checkbox" name="jhs_special_enabled" value="yes" {{ 'checked' if settings.get('jhs_special_enabled') == 'yes' }}>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.75rem;">Target Days</label>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    {% set j_days = settings.get('jhs_special_days', 'Friday').split(',') %}
+                    {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
+                        <label style="font-size: 0.75rem; font-weight: 600; padding: 0.4rem 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            <input type="checkbox" name="jhs_special_days" value="{{ day }}" {{ 'checked' if day in j_days }} style="accent-color: #10b981;"> {{ day[:3] }}
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem;">Global Duration</label>
+                    <input type="number" name="jhs_special_duration" value="{{ settings.get('jhs_special_duration', '40') }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem;">Mode Position</label>
+                    <select name="jhs_special_position" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px; background: white;">
+                        <option value="first" {{ 'selected' if settings.get('jhs_special_position') == 'first' }}>Start of Day</option>
+                        <option value="last" {{ 'selected' if settings.get('jhs_special_position') == 'last' }}>End of Day</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #1e40af; margin-bottom: 0.5rem;">AM Spec. Break Start</label>
+                    <input type="time" name="jhs_am_special_break_start" value="{{ settings.get('jhs_am_special_break_start', '08:40') }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #1e40af; margin-bottom: 0.5rem;">AM Spec. Break End</label>
+                    <input type="time" name="jhs_am_special_break_end" value="{{ settings.get('jhs_am_special_break_end', '09:10') }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px;">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #9a3412; margin-bottom: 0.5rem;">PM Spec. Break Start</label>
+                    <input type="time" name="jhs_pm_special_break_start" value="{{ settings.get('jhs_pm_special_break_start', '14:40') }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #9a3412; margin-bottom: 0.5rem;">PM Spec. Break End</label>
+                    <input type="time" name="jhs_pm_special_break_end" value="{{ settings.get('jhs_pm_special_break_end', '15:10') }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px;">
+                </div>
+            </div>
+
+            <div>
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem;">Injected Template Subject</label>
+                <input type="text" name="jhs_special_extra_subject" value="{{ settings.get('jhs_special_extra_subject', 'Homeroom') }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 1rem;">
+                <select name="jhs_special_teacher" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px; background: white;">
+                    <option value="adviser" {{ 'selected' if settings.get('jhs_special_teacher', 'adviser') == 'adviser' }}>Force Section Adviser</option>
+                    {% for t in teachers %}
+                    <option value="{{ t.id }}" {{ 'selected' if settings.get('jhs_special_teacher') == t.id|string }}>{{ t.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- SHS Special -->
+        <div class="card" style="border-top: 4px solid #a855f7;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="color: #7e22ce; margin: 0;"><i data-lucide="sparkles" style="width: 20px; vertical-align: middle;"></i> SHS Special Mode</h3>
+                <label class="switch-premium purple">
+                    <input type="checkbox" name="shs_special_enabled" value="yes" {{ 'checked' if settings.get('shs_special_enabled') == 'yes' }}>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.75rem;">Target Days</label>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    {% set s_days = settings.get('shs_special_days', 'Friday').split(',') %}
+                    {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
+                        <label style="font-size: 0.75rem; font-weight: 600; padding: 0.4rem 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            <input type="checkbox" name="shs_special_days" value="{{ day }}" {{ 'checked' if day in s_days }} style="accent-color: #a855f7;"> {{ day[:3] }}
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem;">Global Duration</label>
+                    <input type="number" name="shs_special_duration" value="{{ settings.get('shs_special_duration', '40') }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem;">Mode Position</label>
+                    <select name="shs_special_position" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px; background: white;">
+                        <option value="first" {{ 'selected' if settings.get('shs_special_position') == 'first' }}>Start of Day</option>
+                        <option value="last" {{ 'selected' if settings.get('shs_special_position') == 'last' }}>End of Day</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem;">Spec. Break Start</label>
+                    <input type="time" name="shs_special_break_start" value="{{ settings.get('shs_special_break_start', '09:30') }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem;">Spec. Break End</label>
+                    <input type="time" name="shs_special_break_end" value="{{ settings.get('shs_special_break_end', '10:00') }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px;">
+                </div>
+            </div>
+
+            <div>
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem;">Injected Template Subject</label>
+                <input type="text" name="shs_special_extra_subject" value="{{ settings.get('shs_special_extra_subject', 'Homeroom') }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 1rem;">
+                <select name="shs_special_teacher" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px; background: white;">
+                    <option value="adviser" {{ 'selected' if settings.get('shs_special_teacher', 'adviser') == 'adviser' }}>Force Section Adviser</option>
+                    {% for t in teachers %}
+                    <option value="{{ t.id }}" {{ 'selected' if settings.get('shs_special_teacher') == t.id|string }}>{{ t.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shifts Section -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem;">
+            <i data-lucide="clock" style="width: 20px; color: var(--error);"></i> Shift Assignments
+        </h3>
+
+        <!-- JHS AM Shift -->
+        <div style="background: var(--bg-main); padding: 1.5rem; border-radius: 16px; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h4 style="margin: 0; color: #1e40af;">JHS Morning (AM) Shift</h4>
+                <div style="display: flex; gap: 1rem;">
+                    {% for g in [7, 8, 9, 10] %}
+                        <label style="font-size: 0.8125rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            <input type="checkbox" name="jhs_am_grade_{{ g }}" {{ 'checked' if settings.get('jhs_am_grade_' ~ g) }} style="accent-color: #1e40af;"> G{{ g }}
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;">
+                <div>
+                    <label style="display: block; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;">Start</label>
+                    <input type="time" name="jhs_am_start" value="{{ settings.get('jhs_am_start', '06:00') }}" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;">End</label>
+                    <input type="time" name="jhs_am_end" value="{{ settings.get('jhs_am_end', '12:00') }}" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;">Break Start</label>
+                    <input type="time" name="jhs_am_break_start" value="{{ settings.get('jhs_am_break_start', '09:00') }}" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;">Break End</label>
+                    <input type="time" name="jhs_am_break_end" value="{{ settings.get('jhs_am_break_end', '09:30') }}" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- JHS PM Shift -->
+        <div style="background: var(--bg-main); padding: 1.5rem; border-radius: 16px; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h4 style="margin: 0; color: #9a3412;">JHS Afternoon (PM) Shift</h4>
+                <div style="display: flex; gap: 1rem;">
+                    {% for g in [7, 8, 9, 10] %}
+                        <label style="font-size: 0.8125rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            <input type="checkbox" name="jhs_pm_grade_{{ g }}" {{ 'checked' if settings.get('jhs_pm_grade_' ~ g) }} style="accent-color: #9a3412;"> G{{ g }}
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;">
+                <div>
+                    <label style="display: block; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;">Start</label>
+                    <input type="time" name="jhs_pm_start" value="{{ settings.get('jhs_pm_start', '12:00') }}" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;">End</label>
+                    <input type="time" name="jhs_pm_end" value="{{ settings.get('jhs_pm_end', '18:00') }}" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;">Break Start</label>
+                    <input type="time" name="jhs_pm_break_start" value="{{ settings.get('jhs_pm_break_start', '15:00') }}" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;">Break End</label>
+                    <input type="time" name="jhs_pm_break_end" value="{{ settings.get('jhs_pm_break_end', '15:30') }}" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- SHS Integrated Shift -->
+        <div style="background: white; border: 2px solid var(--border); padding: 1.5rem; border-radius: 16px;">
+            <h4 style="margin: 0 0 1.5rem 0; color: #7e22ce;">SHS Integrated Shift (Whole Day)</h4>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;">Day Start</label>
+                        <input type="time" name="shs_start" value="{{ settings.get('shs_start', '07:00') }}" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;">Day End</label>
+                        <input type="time" name="shs_end" value="{{ settings.get('shs_end', '17:00') }}" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px;">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;">Morning Break</label>
+                        <input type="time" name="shs_break_start" value="{{ settings.get('shs_break_start', '09:30') }}" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;">End</label>
+                        <input type="time" name="shs_break_end" value="{{ settings.get('shs_break_end', '10:00') }}" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px;">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;">Lunch Start</label>
+                        <input type="time" name="shs_lunch_start" value="{{ settings.get('shs_lunch_start', '12:00') }}" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;">Lunch End</label>
+                        <input type="time" name="shs_lunch_end" value="{{ settings.get('shs_lunch_end', '13:00') }}" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sticky Save Bar -->
+    <div style="position: sticky; bottom: 2rem; background: rgba(255,255,255,0.7); backdrop-filter: blur(12px); padding: 1rem 2rem; border-radius: 20px; box-shadow: var(--shadow-lg); display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); z-index: 100;">
+        <p style="margin: 0; color: var(--text-muted); font-size: 0.875rem;"><i data-lucide="info" style="width: 16px; vertical-align: middle;"></i> These settings apply school-wide and affect the AI scheduler immediately.</p>
+        <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2.5rem; font-size: 1rem;">
+            <i data-lucide="check-circle-2"></i> Deploy Settings
+        </button>
+    </div>
+</form>
+
+<style>
+    /* Custom switches for settings mode */
+    .switch-premium {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+    }
+    .switch-premium input { opacity: 0; width: 0; height: 0; }
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #cbd5e1;
+        transition: .4s;
+        border-radius: 34px;
+    }
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px; width: 18px;
+        left: 3px; bottom: 3px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #10b981; }
+    .purple input:checked + .slider { background-color: #a855f7; }
+    input:checked + .slider:before { transform: translateX(20px); }
+</style>
+{% endblock %}

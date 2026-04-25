@@ -1,0 +1,68 @@
+{% set complete = is_complete(s) %}
+<tr id="section-row-{{ s.id }}" class="section-row {% if not complete %}tr-incomplete{% endif %}" data-status="{{ 'complete' if complete else 'incomplete' }}">
+    <td><input type="checkbox" name="selected_ids" value="{{ s.id }}" onchange="updateBulkButton()" style="width: 16px; height: 16px; accent-color: var(--primary);"></td>
+    <td>
+        <div style="font-weight: 600; color: var(--text-main);">{{ s.name }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">{{ s.department }} Division</div>
+    </td>
+    <td>
+        <span class="badge {{ 'badge-complete' if complete else 'badge-incomplete' }}">
+            {{ 'Complete' if complete else 'Incomplete' }}
+        </span>
+    </td>
+    <td>
+        <div style="display: flex; gap: 4px; align-items: center;">
+            <span style="background: var(--primary-light); color: var(--primary); padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700;">G{{ s.grade_level }}</span>
+            {% if s.track %}
+            <span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">{{ s.track }}</span>
+            {% endif %}
+        </div>
+    </td>
+    <td>
+        {% if s.is_section_a %}
+        <span style="color: var(--warning); font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+            <i data-lucide="star" style="width: 14px; fill: var(--warning);"></i> Section A
+        </span>
+        {% else %}
+        <span style="color: var(--text-muted); font-size: 0.75rem;">Regular</span>
+        {% endif %}
+    </td>
+    <td>
+        {% if s.adviser %}
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 24px; height: 24px; background: #e0f2fe; color: #0369a1; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;">{{ s.adviser.name[:1] }}</div>
+            <span style="font-size: 0.8125rem; font-weight: 500;">{{ s.adviser.name }}</span>
+        </div>
+        {% else %}
+        <span style="color: var(--text-muted); font-size: 0.8125rem; font-style: italic;">No Adviser</span>
+        {% endif %}
+    </td>
+    <td>
+        {% if s.room %}
+        <div style="font-size: 0.8125rem; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 4px;">
+            <i data-lucide="map-pin" style="width: 14px; color: var(--text-muted);"></i> {{ s.room.name }}
+        </div>
+        {% else %}
+        <span style="color: var(--error); font-size: 0.8125rem; font-weight: 500;">No Room</span>
+        {% endif %}
+    </td>
+    <td>
+        <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn btn-secondary edit-section-btn" style="padding: 4px 8px; font-size: 0.75rem;" 
+                data-id="{{ s.id }}"
+                data-name="{{ s.name|e }}"
+                data-department="{{ s.department|e }}"
+                data-grade_level="{{ s.grade_level }}"
+                data-track="{{ s.track|e if s.track else '' }}"
+                data-adviser_id="{{ s.adviser_id or '' }}"
+                data-room_id="{{ s.room_id or '' }}"
+                data-is_section_a="{{ '1' if s.is_section_a else '0' }}">
+                <i data-lucide="edit-2" style="width: 12px;"></i> Edit
+            </button>
+            <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem; color: var(--error); border-color: #fee2e2;" 
+                onclick="deleteItem('sections', {{ s.id }}, '{{ s.name }}')">
+                <i data-lucide="trash-2" style="width: 12px;"></i>
+            </button>
+        </div>
+    </td>
+</tr>

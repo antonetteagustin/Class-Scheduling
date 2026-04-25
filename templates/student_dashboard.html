@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2.5rem;">
+    <div>
+        <h1 style="font-size: 2.25rem; margin-bottom: 0.5rem;">Student Dashboard</h1>
+        {% if section %}
+        <p style="color: var(--text-muted); font-size: 1.125rem;">
+            Welcome, Student! You are in <strong>Section {{ section.name }}</strong> (Grade {{ section.grade_level }}).
+        </p>
+        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+            <span style="font-size: 0.875rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+                <i data-lucide="clock" style="width: 14px;"></i> {{ shift_info }}
+            </span>
+            <span style="font-size: 0.875rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+                <i data-lucide="user-check" style="width: 14px;"></i> Adviser: {{ section.adviser.name if section.adviser else 'None' }}
+            </span>
+        </div>
+        {% else %}
+        <p style="color: var(--text-muted); font-size: 1.125rem;">No section mapped to this account.</p>
+        {% endif %}
+    </div>
+    {% if section %}
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="{{ url_for('export_pdf', view_type='section', id=section.id) }}" target="_blank" class="btn btn-secondary">
+            <i data-lucide="file-text"></i> Export PDF
+        </a>
+        <a href="{{ url_for('export_excel', view_type='section', id=section.id) }}" class="btn btn-primary" style="background: #16a34a;">
+            <i data-lucide="file-spreadsheet"></i> Export Excel
+        </a>
+        <a href="{{ url_for('export_word', view_type='section', id=section.id) }}" class="btn btn-primary" style="background: #2b579a;">
+            <i data-lucide="file-text"></i> Export Word
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{% if section %}
+<div class="card">
+    <div class="card-title">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="calendar" style="width: 20px; color: var(--primary);"></i> Class Schedule
+        </div>
+        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">Academic Year 2024-2025</span>
+    </div>
+    
+    {% if grid_data %}
+    {% with color_type='section' %}
+        {% include "_timetable_grid.html" %}
+    {% endwith %}
+    {% else %}
+    <div style="text-align: center; padding: 4rem 2rem; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">
+        <i data-lucide="clock-4" style="width: 48px; height: 48px; color: #94a3b8; margin-bottom: 1rem; opacity: 0.5;"></i>
+        <h3 style="color: #64748b; font-weight: 700;">Schedule Pending</h3>
+        <p style="color: #94a3b8; font-size: 0.875rem;">Your official schedule has not been generated or deployed yet. Please check back later.</p>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,14 @@
+ID: 1 | Name: English | Dept: JHS | GL: 7,8,9,10 | Track: 
+ID: 2 | Name: Filipino | Dept: JHS | GL: 7,8,9,10 | Track: 
+ID: 3 | Name: Math | Dept: JHS | GL: 7,8,9,10 | Track: 
+ID: 4 | Name: ESP | Dept: JHS | GL: 7,8,9,10 | Track: 
+ID: 5 | Name: MAPEH | Dept: JHS | GL: 7,8,9,10 | Track: 
+ID: 6 | Name: Science | Dept: JHS | GL: 7,8,9,10 | Track: 
+ID: 7 | Name: AP | Dept: JHS | GL: 7,8,9,10 | Track: 
+ID: 8 | Name: Physics | Dept: SHS | GL: 11,12 | Track: None
+ID: 9 | Name: Language | Dept: SHS | GL: 11,12 | Track: None
+ID: 10 | Name: Programming | Dept: SHS | GL: 11,12 | Track: None
+ID: 11 | Name: KOMPAN | Dept: SHS | GL: 11 | Track: TVL-ICT, HUMSS, STEM
+ID: 12 | Name: EALS | Dept: SHS | GL: 12 | Track: TVL-ICT, HUMSS, STEM
+ID: 13 | Name: Homeroom | Dept: JHS | GL: None | Track: None
+ID: 14 | Name: TLE | Dept: JHS | GL: 7,8,9,10 | Track: 

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Scheduling System | {{ school_name }}</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="{% if not current_user.is_authenticated %}login-body{% endif %}">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div id="flash-trigger" style="display: none;">
+        {% for category, message in messages %}
+        <span class="flash-data" data-type="{{ category }}">{{ message }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <div id="toast-container" style="position: fixed; top: 24px; right: 24px; z-index: 1000;"></div>
+    {% if current_user.is_authenticated %}
+    <div class="app-wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">AI</div>
+                <h2 style="color: white; font-size: 1.125rem;">Scheduler</h2>
+            </div>
+
+            <nav class="sidebar-nav">
+                <span class="nav-label">Core</span>
+                {% if current_user.role == 'admin' %}
+                    <a href="{{ url_for('admin_dashboard') }}" class="nav-item">
+                        <i data-lucide="layout-dashboard"></i> Dashboard
+                    </a>
+                    <span class="nav-label">Management</span>
+                    <a href="{{ url_for('admin_teachers') }}" class="nav-item">
+                        <i data-lucide="users"></i> Teachers
+                    </a>
+                    <a href="{{ url_for('admin_classrooms') }}" class="nav-item">
+                        <i data-lucide="building"></i> Classrooms
+                    </a>
+                    <a href="{{ url_for('admin_sections') }}" class="nav-item">
+                        <i data-lucide="layers"></i> Sections
+                    </a>
+                    <a href="{{ url_for('admin_subjects') }}" class="nav-item">
+                        <i data-lucide="book-open"></i> Subjects
+                    </a>
+                    <span class="nav-label">Scheduling</span>
+                    <a href="{{ url_for('admin_setup') }}" class="nav-item">
+                        <i data-lucide="calendar"></i> Generate & View
+                    </a>
+                    <span class="nav-label">System</span>
+                    <a href="{{ url_for('admin_settings') }}" class="nav-item">
+                        <i data-lucide="settings"></i> Settings
+                    </a>
+                {% elif current_user.role == 'teacher' %}
+                    <a href="{{ url_for('teacher_dashboard') }}" class="nav-item">
+                        <i data-lucide="layout-dashboard"></i> Dashboard
+                    </a>
+                {% elif current_user.role == 'student' %}
+                    <a href="{{ url_for('student_dashboard') }}" class="nav-item">
+                        <i data-lucide="layout-dashboard"></i> Dashboard
+                    </a>
+                {% endif %}
+            </nav>
+
+            <div style="margin-top: auto; padding-top: 2rem;">
+                <a href="{{ url_for('logout') }}" class="nav-item" style="color: #f87171;">
+                    <i data-lucide="log-out"></i> Logout
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <h3 style="font-size: 0.875rem; color: var(--text-muted);">{{ school_name }}</h3>
+                </div>
+                <div class="topbar-right" style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="text-align: right;">
+                        <p style="font-size: 0.875rem; font-weight: 600;">{{ current_user.username }}</p>
+                        <p style="font-size: 0.75rem; color: var(--text-muted);">{{ current_user.role|capitalize }}</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="page-container" id="content">
+
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    {% else %}
+        {% block login_content %}{% endblock %}
+    {% endif %}
+
+    <script>
+        // Init Lucide Icons
+        lucide.createIcons();
+
+        // Active State Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.nav-item').forEach(item => {
+                if (item.getAttribute('href') === currentPath) {
+                    item.classList.add('active');
+                    // Find parent group and mark as active or just the item
+                }
+            });
+
+            // Flash Message Toasts
+            const flashData = document.querySelectorAll('.flash-data');
+            flashData.forEach(msg => {
+                let type = msg.dataset.type;
+                if (!type || type === 'message') type = 'success';
+                showToast(msg.textContent, type);
+            });
+        });
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `card`;
+            toast.style.cssText = `
+                margin-bottom: 12px;
+                padding: 12px 20px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                box-shadow: var(--shadow-lg);
+                animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                min-width: 320px;
+                background: white;
+                border-left: 4px solid var(--primary);
+            `;
+            
+            const icon = type === 'success' ? 'check-circle' : 'alert-circle';
+            const color = type === 'success' ? 'var(--success)' : 'var(--error)';
+            toast.style.borderLeftColor = color;
+
+            toast.innerHTML = `
+                <div style="color: ${color}"><i data-lucide="${icon}" style="width: 20px; height: 20px;"></i></div>
+                <div style="font-size: 0.875rem; font-weight: 500;">${message}</div>
+            `;
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-10px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Add Keyframe for toast
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+                to { opacity: 1; transform: translateY(0) scale(1); }
+            }
+        `;
+        document.head.append(style);
+
+        // Standard Delete Handler
+        function deleteItem(module, id, name) {
+            if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+            
+            const typeMap = { 'teachers': 'teacher', 'classrooms': 'classroom', 'sections': 'section', 'subjects': 'subject' };
+            const rowId = `${typeMap[module] || 'item'}-row-${id}`;
+            
+            fetch(`/admin/${module}/delete/${id}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    const row = document.getElementById(rowId);
+                    if (row) {
+                        row.style.opacity = '0';
+                        row.style.transform = 'scale(0.95)';
+                        row.style.transition = 'all 0.3s ease';
+                        setTimeout(() => row.remove(), 300);
+                    }
+                    showToast(res.msg || 'Deleted successfully');
+                } else {
+                    showToast(res.error || 'Failed to delete', 'error');
+                }
+            })
+            .catch(err => showToast('Error: ' + err, 'error'));
+        }
+
+        // --- GLOBAL IMPORT LOGIC ---
+        let importMode = 'file';
+        let lastParsedData = [];
+
+        function switchImportMode(mode, el) {
+            importMode = mode;
+            document.querySelectorAll('.import-tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('fileImportSection').style.display = (mode === 'file') ? 'block' : 'none';
+            document.getElementById('textImportSection').style.display = (mode === 'text') ? 'block' : 'none';
+            const previewSec = document.getElementById('previewSection');
+            if(previewSec) previewSec.style.display = 'none';
+            const confirmBtn = document.getElementById('confirmImportBtn');
+            if(confirmBtn) confirmBtn.style.display = 'none';
+            const previewBtn = document.getElementById('previewBtn');
+            if(previewBtn) previewBtn.style.display = 'block';
+        }
+
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const label = input.nextElementSibling.querySelector('p');
+                if(label) label.innerText = `Selected: ${input.files[0].name}`;
+            }
+        }
+
+        function resetImportModal() {
+            const fileInput = document.getElementById('importFile');
+            const textInput = document.getElementById('importText');
+            if(fileInput) fileInput.value = '';
+            if(textInput) textInput.value = '';
+            const previewSec = document.getElementById('previewSection');
+            if(previewSec) previewSec.style.display = 'none';
+            const confirmBtn = document.getElementById('confirmImportBtn');
+            if(confirmBtn) confirmBtn.style.display = 'none';
+            const previewBtn = document.getElementById('previewBtn');
+            if(previewBtn) previewBtn.style.display = 'block';
+            const firstTab = document.querySelector('.import-tab');
+            if (firstTab) switchImportMode('file', firstTab);
+        }
+
+        function processPreview(module) {
+            const formData = new FormData();
+            if (importMode === 'file') {
+                const fileInput = document.getElementById('importFile');
+                if (!fileInput.files[0]) return showToast('Please select a file first', 'error');
+                formData.append('file', fileInput.files[0]);
+            } else {
+                const text = document.getElementById('importText').value;
+                if (!text.trim()) return showToast('Please paste some data', 'error');
+                formData.append('text_data', text);
+            }
+
+            const btn = document.getElementById('previewBtn');
+            btn.disabled = true;
+            btn.innerText = 'Processing...';
+
+            fetch(`/admin/import/${module}/preview`, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(res => {
+                btn.disabled = false;
+                btn.innerText = 'Preview Data';
+                if (res.error) {
+                    showToast(res.error, 'error');
+                    return;
+                }
+                lastParsedData = res.data || [];
+                renderPreview(lastParsedData, module);
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerText = 'Preview Data';
+                showToast('Processing failed: ' + err, 'error');
+            });
+        }
+
+        function renderPreview(data, module) {
+            const body = document.getElementById('previewBody');
+            if(!body) return;
+            body.innerHTML = '';
+            let validCount = 0;
+            
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = row._is_complete ? 'preview-row-valid' : 'preview-row-invalid';
+                if (row._is_complete) validCount++;
+                const errors = row._errors && row._errors.length > 0 ? row._errors.join(', ') : 'OK';
+                
+                // Generic preview columns
+                tr.innerHTML = `
+                    <td>${row.name || '---'}</td>
+                    <td>${row.department || row.room_type || row.grade_level || '---'}</td>
+                    <td><span class="status-badge ${row._is_complete ? 'status-valid' : 'status-error'}">${row._is_complete ? 'VALID' : 'ERROR'}</span></td>
+                    <td style="font-size: 0.75rem; color: ${row._is_complete ? 'var(--success)' : 'var(--error)'}">${errors}</td>
+                `;
+                body.appendChild(tr);
+            });
+
+            document.getElementById('previewSection').style.display = 'block';
+            document.getElementById('importStats').innerText = `${validCount} of ${data.length} records ready to import.`;
+            
+            let warningEl = document.getElementById('importWarning');
+            if (!warningEl) {
+                warningEl = document.createElement('div');
+                warningEl.id = 'importWarning';
+                warningEl.style.cssText = 'margin-top: 0.5rem; font-size: 0.875rem; font-weight: 600; color: var(--error); padding: 0.75rem; background: #fef2f2; border: 1px solid #f87171; border-radius: 8px;';
+                document.getElementById('previewSection').appendChild(warningEl);
+            }
+            
+            if (validCount < data.length) {
+                warningEl.innerHTML = `<i data-lucide="alert-triangle" style="width: 16px; vertical-align: middle;"></i> <strong>Warning:</strong> ${data.length - validCount} record(s) have errors (e.g., duplicate names) and will be skipped. Please review the red rows above.`;
+                warningEl.style.display = 'block';
+                lucide.createIcons();
+            } else {
+                warningEl.style.display = 'none';
+            }
+
+            if (validCount > 0) {
+                document.getElementById('confirmImportBtn').style.display = 'block';
+                document.getElementById('previewBtn').style.display = 'none';
+            }
+        }
+
+        function confirmImport(module) {
+            const validData = lastParsedData.filter(r => r._is_complete);
+            if (validData.length === 0) return;
+
+            const btn = document.getElementById('confirmImportBtn');
+            btn.disabled = true;
+            btn.innerText = 'Importing...';
+
+            fetch(`/admin/import/${module}/confirm`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({ data: validData })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    showToast(`Successfully imported ${res.count} records!`);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(res.error || 'Import failed', 'error');
+                    btn.disabled = false;
+                    btn.innerText = 'Confirm & Import';
+                }
+            })
+            .catch(err => {
+                showToast('Import failed: ' + err, 'error');
+                btn.disabled = false;
+                btn.innerText = 'Confirm & Import';
+            });
+        }
+        // --- INSTANT NAVIGATION (SPA-LIKE) ---
+        function attachSwapper() {
+            document.querySelectorAll('a').forEach(link => {
+                if (link.getAttribute('data-swapper-attached')) return;
+                const href = link.getAttribute('href');
+                
+                // Only intercept local links that aren't exports or logouts
+                if (href && href.startsWith('/') && !href.includes('export') && !href.includes('logout') && !href.includes('pdf')) {
+                    link.addEventListener('click', e => {
+                        e.preventDefault();
+                        navigateTo(href);
+                    });
+                    link.setAttribute('data-swapper-attached', 'true');
+                }
+            });
+        }
+
+        function navigateTo(url) {
+            // Show a subtle progress indicator
+            const content = document.getElementById('content');
+            if (!content) return window.location.href = url; 
+            
+            content.style.opacity = '0.5';
+            content.style.transition = 'opacity 0.2s ease';
+            
+            fetch(url)
+                .then(r => r.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newContent = doc.getElementById('content');
+                    
+                    if (newContent) {
+                        content.innerHTML = newContent.innerHTML;
+                        content.style.opacity = '1';
+                        
+                        // Update UI state
+                        history.pushState({}, '', url);
+                        updateActiveSidebar(url);
+                        
+                        // Re-initialize Lucide icons
+                        if (window.lucide) lucide.createIcons();
+                        
+                        // Re-attach swapper to new links
+                        attachSwapper();
+                        
+                        // Scroll to top
+                        window.scrollTo(0, 0);
+
+                        // Trigger any page-specific init (if we had a registry)
+                        // Re-run scripts in the new content to ensure they register correctly
+                        const scripts = content.querySelectorAll('script');
+                        scripts.forEach(oldScript => {
+                            const newScript = document.createElement("script");
+                            Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                            if (oldScript.src) {
+                                newScript.src = oldScript.src;
+                            } else {
+                                newScript.textContent = oldScript.textContent;
+                            }
+                            document.head.appendChild(newScript).parentNode.removeChild(newScript);
+                            oldScript.parentNode.removeChild(oldScript);
+                        });
+                    } else {
+                        window.location.href = url; // Fallback
+                    }
+                })
+                .catch(err => {
+                    console.error('Nav error:', err);
+                    window.location.href = url; // Fallback
+                });
+        }
+
+        function updateActiveSidebar(url) {
+            const path = new URL(url, window.location.origin).pathname;
+            document.querySelectorAll('.sidebar-nav a').forEach(link => {
+                const linkPath = new URL(link.getAttribute('href'), window.location.origin).pathname;
+                if (path === linkPath) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            attachSwapper();
+            window.addEventListener('popstate', () => navigateTo(window.location.pathname));
+        });
+    </script>
+
+</body>
+
+</html>

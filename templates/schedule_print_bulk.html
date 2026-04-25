@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Export - {{ school_name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --text-main: #020617;
+            --text-slate: #334155;
+            --text-muted: #64748b;
+            --border: #000;
+            --bg-inactive: #f1f5f9;
+        }
+
+        body {
+            font-family: 'Outfit', 'Inter', sans-serif;
+            line-height: 1.1;
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: var(--text-main);
+        }
+
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            backdrop-filter: blur(8px);
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-print {
+            background: #f8fafc;
+            color: #0f172a;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-pdf {
+            background: var(--primary);
+            color: white;
+        }
+
+        @media print {
+            .controls {
+                display: none;
+            }
+
+            @page {
+                size: letter landscape;
+                margin: 0.3in;
+            }
+        }
+
+        .schedule-page {
+            page-break-before: always;
+            break-before: page;
+            break-inside: avoid !important;
+            -webkit-column-break-inside: avoid;
+            -webkit-region-break-inside: avoid;
+            max-width: 10.5in;
+            margin: 0 auto;
+            padding: 10px 20px;
+            min-height: 7.5in;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+        }
+
+        .schedule-page:first-child {
+            page-break-before: avoid;
+            break-before: avoid;
+        }
+
+        /* Inactive Teacher Styling */
+        .schedule-page.inactive-teacher {
+            background: var(--bg-inactive);
+            opacity: 0.85;
+            border-left: 8px solid #cbd5e1;
+            color: var(--text-slate);
+        }
+
+        .schedule-page.inactive-teacher table,
+        .schedule-page.inactive-teacher th,
+        .schedule-page.inactive-teacher td {
+            border-color: #94a3b8;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 8px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 8px;
+            position: relative;
+        }
+
+        .inactive-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #64748b;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .header h2 {
+            margin: 4px 0;
+            font-size: 13px;
+            font-weight: 700;
+            color: #444;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 10px 0;
+            font-size: 9px;
+            text-align: left;
+        }
+
+        .meta-item {
+            font-weight: 600;
+        }
+
+        .meta-item span {
+            font-weight: 800;
+            border-bottom: 1px solid #ddd;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            border: 2px solid #000;
+            flex-grow: 1;
+            overflow-wrap: break-word;
+            border-spacing: 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #000;
+            padding: 4px;
+            text-align: center;
+            vertical-align: top;
+            font-size: 8.5px;
+        }
+
+        th {
+            background: #f1f5f9;
+            font-weight: 800;
+            text-transform: uppercase;
+            vertical-align: middle;
+        }
+
+        .time-col {
+            width: 80px;
+            font-weight: 800;
+            background: #f1f5f9;
+            vertical-align: middle;
+        }
+
+        .break-cell {
+            background: #f8fafc;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #64748b;
+            font-size: 8px;
+            vertical-align: middle;
+        }
+
+        .subject-title {
+            font-weight: 800;
+            font-size: 9.5px;
+            margin-bottom: 2px;
+            color: var(--text-main);
+        }
+
+        .inactive-teacher .subject-title {
+            color: var(--text-slate);
+        }
+
+        .subject-meta {
+            font-size: 7.5px;
+            font-weight: 600;
+            opacity: 0.85;
+        }
+
+        .footer {
+            margin-top: auto;
+            padding-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 8.5px;
+            font-weight: 700;
+            color: #64748b;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+
+<body>
+    <div class="controls" data-html2canvas-ignore="true">
+        <button class="btn btn-print" onclick="window.print()">
+            <i data-lucide="printer" style="width: 16px;"></i> Print
+        </button>
+        <button class="btn btn-pdf" onclick="downloadPDF()">
+            <i data-lucide="download" style="width: 16px;"></i> PDF
+        </button>
+    </div>
+
+    <div id="printableArea">
+        {% for item in bulk_data %}
+        {% set entity = item.entity %}
+        {% set grid_data = item.grid_data %}
+        {% set is_condensed = item.is_condensed %}
+
+        <div class="schedule-page {{ 'inactive-teacher' if view_type == 'teacher' and not entity.is_active else '' }}">
+            <div class="header">
+                {% if view_type == 'teacher' and not entity.is_active %}<div class="inactive-badge">INACTIVE PROFILE</div>{% endif %}
+                <h1>{{ school_name }}</h1>
+                <h2>SCHOOL YEAR: {{ school_year }}</h2>
+
+                <div class="meta-grid">
+                    {% if view_type == 'teacher' %}
+                    <div class="meta-item">Teacher: <span>{{ entity.name }}</span></div>
+                    <div class="meta-item">Dept: <span>{{ entity.department }}</span></div>
+                    <div class="meta-item">Rank: <span>{{ 'Master Teacher' if entity.is_master else 'Teacher' }}</span>
+                    </div>
+                    {% elif view_type == 'section' %}
+                    <div class="meta-item">Section: <span>{{ entity.name }}</span></div>
+                    <div class="meta-item">Grade: <span>Grade {{ entity.grade_level }}</span></div>
+                    <div class="meta-item">Adviser: <span>{{ entity.adviser.name if entity.adviser else 'TBA' }}</span>
+                    </div>
+                    <div class="meta-item">Room: <span>{{ entity.room.name if entity.room else 'TBA' }}</span></div>
+                    {% elif view_type == 'classroom' %}
+                    <div class="meta-item">Room: <span>{{ entity.name }}</span></div>
+                    <div class="meta-item">Building: <span>{{ entity.building }}</span></div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if is_condensed %}
+            <!-- Condensed Layout (SHS) -->
+            <table>
+                <thead>
+                    <tr>
+                        <th class="time-col">Time</th>
+                        {% for day in grid_data.days %}<th>{{ day }}</th>{% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for slot in grid_data.time_slots %}
+                    {% set slot_parts = slot.split(':') %}
+                    {% set slot_m = slot_parts[0]|int * 60 + slot_parts[1]|int %}
+                    {% if slot_m >= grid_data.shift_start_m and slot_m < grid_data.shift_end_m %}
+                    <tr>
+                        <td class="time-col">{{ slot }} – {{ grid_data.slot_ranges[slot] }}</td>
+                        {% for day in grid_data.days %}
+                        {% if not grid_data.occupied[slot][day] %}
+                        {% set sch = grid_data.grid[slot][day] %}
+                        {% if sch in ['BREAK', 'LUNCH'] %}
+                        {% set span = grid_data.spans[slot][day] %}
+                        <td rowspan="{{ span }}" class="break-cell">
+                            <div style="font-weight: 800; letter-spacing: 2px;">{{ 'LUNCH' if sch == 'LUNCH' else
+                                'BREAK' }}</div>
+                            <div style="font-size: 7px; opacity: 0.8; margin-top: 2px; font-weight: 600;">
+                                {{ slot }} - {{
+                                grid_data.slot_ranges[grid_data.time_slots[grid_data.time_slots.index(slot) + span - 1]]
+                                }}
+                            </div>
+                        </td>
+                        {% elif sch %}
+                        <td rowspan="{{ grid_data.spans[slot][day] }}"
+                            style="border-left: 3px solid #000; padding: 4px;">
+                            <div class="subject-title">{{ sch.subject.name }}</div>
+                            <div class="subject-meta">{{ sch.teacher.name if view_type != 'teacher' else
+                                sch.section.name }}</div>
+                            <div class="subject-meta">RM: {{ sch.room.name }}</div>
+                        </td>
+                        {% else %}
+                        <td rowspan="{{ grid_data.spans[slot][day] }}"></td>
+                        {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <!-- Normal Layout (JHS / Teacher / Room) -->
+            <table>
+                <thead>
+                    <tr>
+                        <th class="time-col">Time Slot</th>
+                        {% for day in grid_data.days %}<th>{{ day }}</th>{% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for slot in grid_data.time_slots %}
+                    {% set slot_parts = slot.split(':') %}
+                    {% set slot_m = slot_parts[0]|int * 60 + slot_parts[1]|int %}
+                    {% if slot_m >= grid_data.shift_start_m and slot_m < grid_data.shift_end_m %}
+                    <tr style="height: 30px;">
+                        <td class="time-col" style="position: relative; vertical-align: top; padding: 0;">
+                            <div
+                                style="position: absolute; top: -6px; left: 0; right: 0; background: white; width: max-content; margin: 0 auto; padding: 0 4px; font-weight: 800;">
+                                {{ slot }}</div>
+                        </td>
+                        {% for day in grid_data.days %}
+                        {% if not grid_data.occupied[slot][day] %}
+                        {% set sch = grid_data.grid[slot][day] %}
+                        {% if sch in ['BREAK', 'LUNCH'] %}
+                        {% set span = grid_data.spans[slot][day] %}
+                        <td rowspan="{{ span }}" class="break-cell">
+                            <div style="font-weight: 800; letter-spacing: 2px;">{{ 'LUNCH' if sch == 'LUNCH' else
+                                'BREAK' }}</div>
+                            <div style="font-size: 7px; opacity: 0.8; margin-top: 2px; font-weight: 600;">
+                                {{ slot }} - {{
+                                grid_data.slot_ranges[grid_data.time_slots[grid_data.time_slots.index(slot) + span - 1]]
+                                }}
+                            </div>
+                        </td>
+                        {% elif sch %}
+                        <td rowspan="{{ grid_data.spans[slot][day] }}"
+                            style="border-left: 3px solid #000; padding: 4px;">
+                            <div class="subject-title">{{ sch.subject.name }}</div>
+                            <div class="subject-meta">
+                                {% if view_type == 'teacher' %}Sec {{ sch.section.name }}{% else %}{{ sch.teacher.name
+                                }}{% endif %}
+                                | {{ sch.room.name }}
+                            </div>
+                            <div class="subject-meta" style="margin-top: 2px; font-weight: 700; opacity: 0.6;">{{
+                                sch.start_time }} - {{ sch.end_time }}</div>
+                        </td>
+                        {% else %}
+                        <td></td>
+                        {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if grid_data.time_slots %}
+                    <tr style="height: 1px;">
+                        <td class="time-col"
+                            style="position: relative; vertical-align: top; padding: 0; height: 1px; border-top: 1px solid #000;">
+                            <div
+                                style="position: absolute; top: -6px; left: 0; right: 0; background: white; width: max-content; margin: 0 auto; padding: 0 4px; font-weight: 800;">
+                                {{ grid_data.slot_ranges[grid_data.time_slots[-1]] }}
+                            </div>
+                        </td>
+                        {% for day in grid_data.days %}<td style="border-top: 1px solid #000; height: 1px; padding: 0;">
+                        </td>{% endfor %}
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            {% endif %}
+
+            <div class="footer">
+                <div>Generated: {{ last_setup_time }}</div>
+                <div>Official School Schedule | {{ school_name }}</div>
+                <div>Page {{ loop.index }} of {{ bulk_data|length }}</div>
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        async function downloadPDF() {
+            const element = document.getElementById('printableArea');
+            const fileName = 'Bulk_Export_{{ view_type }}.pdf';
+
+            const btn = document.querySelector('.btn-pdf');
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<span style="font-size: 11px;">Generating...</span>`;
+
+            try {
+                const opt = {
+                    margin: [0.3, 0.3],
+                    filename: fileName,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: {
+                        scale: 1.5,
+                        useCORS: true,
+                        letterRendering: true,
+                        backgroundColor: '#ffffff'
+                    },
+                    jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+                };
+
+                await html2pdf().set(opt).from(element).save();
+            } catch (e) {
+                console.error(e);
+                alert("Bulk PDF error: Try the 'Print' button and select 'Save as PDF' instead.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        }
+    </script>
+</body>
+
+</html>

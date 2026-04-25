@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header"
+    style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2.5rem;">
+    <div>
+        <h1 style="font-size: 2.25rem; margin-bottom: 0.5rem;">Teacher Dashboard</h1>
+        {% if teacher %}
+        <p style="color: var(--text-muted); font-size: 1.125rem;">
+            Welcome, <strong>{{ teacher.name }}</strong> | {{ teacher.department }} Department
+            <span class="badge {{ 'badge-complete' if teacher.is_master else 'badge-incomplete' }}"
+                style="margin-left: 0.5rem;">
+                {{ 'Master Teacher' if teacher.is_master else 'Regular Teacher' }}
+            </span>
+        </p>
+        {% else %}
+        <p style="color: var(--text-muted); font-size: 1.125rem;">No teacher profile mapped to this account.</p>
+        {% endif %}
+    </div>
+    {% if teacher %}
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="{{ url_for('export_pdf', view_type='teacher', id=teacher.id) }}" target="_blank"
+            class="btn btn-secondary">
+            <i data-lucide="file-text"></i> Export PDF
+        </a>
+        <a href="{{ url_for('export_excel', view_type='teacher', id=teacher.id) }}" class="btn btn-primary"
+            style="background: #16a34a;">
+            <i data-lucide="file-spreadsheet"></i> Export Excel
+        </a>
+        <a href="{{ url_for('export_word', view_type='teacher', id=teacher.id) }}" class="btn btn-primary"
+            style="background: #2b579a;">
+            <i data-lucide="file-text"></i> Export Word
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{% if teacher %}
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+    <!-- Profile Info -->
+    <div class="card">
+        <h3 style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="info" style="width: 20px; color: var(--primary);"></i> Overview
+        </h3>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div>
+                <p style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                    Teaching Load</p>
+                <p style="font-weight: 600;">{{ teacher.subjects }}</p>
+            </div>
+            <div>
+                <p style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                    Work Days</p>
+                <p style="font-weight: 600;">{{ teacher.preferred_days }}</p>
+            </div>
+            <div>
+                <p style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                    Max Hours/Day</p>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="height: 8px; background: #e2e8f0; border-radius: 4px; flex: 1;">
+                        <div
+                            style="height: 100%; background: var(--primary); border-radius: 4px; width: {{ ((teacher.max_hours_per_day or 6) / 8) * 100 }}%;">
+                        </div>
+                    </div>
+                    <span style="font-weight: 600; font-size: 0.875rem;">{{ teacher.max_hours_per_day or 6 }}h</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advisees -->
+    <div class="card">
+        <h3 style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="users" style="width: 20px; color: var(--primary);"></i> My Advisees
+        </h3>
+        {% if advisees %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Section</th>
+                        <th>Grade</th>
+                        <th>Track / Building</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sec in advisees %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ sec.name }}</td>
+                        <td>Grade {{ sec.grade_level }}</td>
+                        <td>{{ sec.track or 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color: var(--text-muted); font-style: italic;">No sections assigned for advisership.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Timetable -->
+<div class="card">
+    <div class="card-title">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="calendar" style="width: 20px; color: var(--primary);"></i> Weekly Schedule
+        </div>
+        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">SY 2024-2025</span>
+    </div>
+
+    {% if grid_data %}
+    {% with color_type='teacher' %}
+        {% include "_timetable_grid.html" %}
+    {% endwith %}
+    {% else %}
+    <div style="text-align: center; padding: 4rem 2rem; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">
+        <i data-lucide="clock-4" style="width: 48px; height: 48px; color: #94a3b8; margin-bottom: 1rem; opacity: 0.5;"></i>
+        <h3 style="color: #64748b; font-weight: 700;">Schedule Pending</h3>
+        <p style="color: #94a3b8; font-size: 0.875rem;">Your official schedule has not been generated or deployed yet. Please check back later.</p>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

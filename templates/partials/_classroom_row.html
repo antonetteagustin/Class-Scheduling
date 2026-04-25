@@ -1,0 +1,38 @@
+{% set complete = is_complete(c) %}
+<tr id="classroom-row-{{ c.id }}" class="classroom-row {% if not complete %}tr-incomplete{% endif %}" data-status="{{ 'complete' if complete else 'incomplete' }}">
+    <td><input type="checkbox" name="selected_ids" value="{{ c.id }}" onchange="updateBulkButton()" style="width: 16px; height: 16px; accent-color: var(--primary);"></td>
+    <td>
+        <div style="font-weight: 600; color: var(--text-main);">{{ c.name }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">{{ c.building or 'Main Building' }}</div>
+    </td>
+    <td>
+        <span class="badge {{ 'badge-complete' if complete else 'badge-incomplete' }}">
+            {{ 'Complete' if complete else 'Incomplete' }}
+        </span>
+    </td>
+    <td>
+        <span style="display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 0.8125rem;">
+            {% if c.room_type == 'Laboratory' %}
+            <i data-lucide="flask-conical" style="width: 14px; color: var(--primary);"></i>
+            {% else %}
+            <i data-lucide="door-open" style="width: 14px; color: var(--secondary);"></i>
+            {% endif %}
+            {{ c.room_type }}
+        </span>
+    </td>
+    <td>
+        <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn btn-secondary edit-classroom-btn" style="padding: 4px 8px; font-size: 0.75rem;" 
+                data-id="{{ c.id }}"
+                data-name="{{ c.name|e }}"
+                data-room_type="{{ c.room_type|e }}"
+                data-building="{{ c.building|e if c.building else '' }}">
+                <i data-lucide="edit-2" style="width: 12px;"></i> Edit
+            </button>
+            <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem; color: var(--error); border-color: #fee2e2;" 
+                onclick="deleteItem('classrooms', {{ c.id }}, '{{ c.name|e }}')">
+                <i data-lucide="trash-2" style="width: 12px;"></i>
+            </button>
+        </div>
+    </td>
+</tr>

@@ -1,0 +1,81 @@
+{% set complete = is_complete(t) %}
+<tr id="teacher-row-{{ t.id }}" class="teacher-row {% if not complete %}tr-incomplete{% endif %}" data-status="{{ 'complete' if complete else 'incomplete' }}" data-active="{{ 'true' if t.is_active else 'false' }}">
+    <td><input type="checkbox" name="selected_ids" value="{{ t.id }}" onchange="updateBulkButton()" style="width: 16px; height: 16px; accent-color: var(--primary);"></td>
+    <td>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <div style="font-weight: 600; color: var(--text-main);">{{ t.name }}</div>
+            {% if t.is_hybrid %}
+            <span class="badge" style="background: #ecfdf5; color: #10b981; font-size: 0.65rem; padding: 1px 4px;">HYBRID</span>
+            {% endif %}
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ t.subjects or 'No subjects' }}</div>
+    </td>
+    <td>
+        <span class="badge {{ 'badge-complete' if complete else 'badge-incomplete' }}" style="margin-bottom: 4px;">
+            {{ 'Complete' if complete else 'Incomplete' }}
+        </span>
+        {% if not t.is_active %}
+        <span class="badge" style="background: #f1f5f9; color: #64748b; font-size: 0.65rem;">DISABLED</span>
+        {% endif %}
+    </td>
+    <td>
+        {% set load = teacher_loads.get(t.id, 0) %}
+        {% set max_h = t.max_hours_per_day * 5 %}
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div style="font-weight: 700; font-size: 0.9rem; color: {{ 'var(--error)' if load < (max_h * 0.8) else 'var(--success)' }};">
+                {{ load }}h <small style="color: var(--text-muted); font-weight: 400;">/ {{ max_h }}h</small>
+            </div>
+            {% if load < (max_h * 0.8) %}
+            <div style="font-size: 0.65rem; color: var(--error); font-weight: 600; letter-spacing: 0.025em;">UNDERTIME</div>
+            {% endif %}
+        </div>
+    </td>
+    <td>
+        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+            {% for gl in (t.grade_levels or '').split(',') if gl %}
+            <span style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; color: #475569;">Gr {{ gl }}</span>
+            {% endfor %}
+        </div>
+    </td>
+    <td>
+        {% if t.is_master %}
+        <span style="color: #8b5cf6; font-weight: 600;"><i data-lucide="award" style="width: 14px; vertical-align: middle;"></i> Master</span>
+        {% else %}
+        <span style="color: var(--text-muted); font-size: 0.875rem;">Regular</span>
+        {% endif %}
+    </td>
+    <td>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            {% if t.department == 'JHS' %}
+            <button type="button" class="btn btn-secondary" 
+                onclick="toggleHybrid({{ t.id }}, this)"
+                style="padding: 4px 8px; font-size: 0.75rem; border-color: {{ '#10b981' if t.is_hybrid else 'var(--border)' }}; color: {{ '#10b981' if t.is_hybrid else 'var(--text-muted)' }};">
+                <i data-lucide="zap" style="width: 12px;"></i> {{ 'Hybrid' if t.is_hybrid else 'Make Hybrid' }}
+            </button>
+            {% endif %}
+            <button type="button" class="btn btn-secondary status-toggle-btn" 
+                onclick="toggleTeacherStatus({{ t.id }}, this)"
+                style="padding: 4px 8px; font-size: 0.75rem; border-color: {{ 'var(--border)' if t.is_active else '#ef4444' }}; color: {{ 'var(--text-muted)' if t.is_active else '#ef4444' }};"
+                title="{{ 'Disable Account' if t.is_active else 'Enable Account' }}">
+                <i data-lucide="{{ 'user-x' if t.is_active else 'user-check' }}" style="width: 12px;"></i>
+            </button>
+            <button type="button" class="btn btn-secondary edit-teacher-btn" style="padding: 4px 8px; font-size: 0.75rem;" 
+                data-id="{{ t.id }}"
+                data-name="{{ t.name|e }}"
+                data-department="{{ t.department|e }}"
+                data-grade_levels="{{ t.grade_levels|e if t.grade_levels else '' }}"
+                data-max_hours="{{ t.max_hours_per_day }}"
+                data-stay_window="{{ t.stay_window_hours }}"
+                data-is_master="{{ '1' if t.is_master else '0' }}"
+                data-handle_sec_a="{{ '1' if t.handle_sec_a else '0' }}"
+                data-preferred_days="{{ t.preferred_days|e }}"
+                data-subjects="{{ t.subjects|e if t.subjects else '' }}">
+                <i data-lucide="edit-2" style="width: 12px;"></i>
+            </button>
+            <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem; color: var(--error); border-color: #fee2e2;" 
+                onclick="deleteItem('teachers', {{ t.id }}, '{{ t.name|e }}')">
+                <i data-lucide="trash-2" style="width: 12px;"></i>
+            </button>
+        </div>
+    </td>
+</tr>

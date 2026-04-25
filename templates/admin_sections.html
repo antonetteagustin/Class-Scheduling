@@ -1,0 +1,713 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2.5rem;">
+    <div>
+        <h1 style="font-size: 2.25rem; margin-bottom: 0.5rem;">Manage Sections</h1>
+        <p style="color: var(--text-muted); font-size: 1.125rem;">Configure class groups, grade levels, and academic tracks.</p>
+    </div>
+    <div style="display: flex; gap: 1rem;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('manageTracksModal').style.display='flex'">
+            <i data-lucide="settings"></i> Manage Tracks
+        </button>
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('addSection').scrollIntoView({behavior: 'smooth'})">
+            <i data-lucide="plus"></i> Create Section
+        </button>
+    </div>
+</div>
+
+<!-- Add New Section Card -->
+<div id="addSection" class="card" style="margin-bottom: 2rem;">
+    <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i data-lucide="layer-plus" style="width: 20px; color: var(--primary);"></i> Register New Class Section
+    </h3>
+    <form id="addSectionForm" action="{{ url_for('admin_sections') }}" method="POST" onsubmit="window.submitAdminForm(event, this, 'section')">
+        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Section Name</label>
+                <input type="text" name="name" required placeholder="e.g. 10-A Diamond" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; font-family: inherit;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Department</label>
+                <select name="department" id="deptSelect" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; font-family: inherit; background-color: white;">
+                    <option value="JHS">Junior High (JHS)</option>
+                    <option value="SHS">Senior High (SHS)</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Grade Level</label>
+                <select name="grade_level" id="gradeSelect" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; font-family: inherit; background-color: white;">
+                    <option value="7">Gr 7</option>
+                    <option value="8">Gr 8</option>
+                    <option value="9">Gr 9</option>
+                    <option value="10">Gr 10</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+            <div id="trackContainer" style="display:none;">
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Academic Track</label>
+                <select name="track_select" id="trackSelect" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; font-family: inherit; background-color: white; margin-bottom: 0.5rem;">
+                    <option value="">-- Choose Track --</option>
+                    {% for t in tracks %}
+                    <option value="{{ t }}">{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Assigned Adviser</label>
+                <select name="adviser_id" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; font-family: inherit; background-color: white;">
+                    <option value="">-- No Adviser Assigned --</option>
+                    {% for t in teachers %}
+                        <option value="{{ t.id }}">{{ t.name }} ({{ t.department }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Home Room / Base Room</label>
+                <select name="room_id" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; font-family: inherit; background-color: white;">
+                    <option value="">-- No Room Assigned --</option>
+                    {% for c in classrooms %}
+                        <option value="{{ c.id }}">{{ c.name }} ({{ c.building }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; padding: 1.25rem; background: var(--bg-main); border-radius: 16px;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <label style="font-weight: 600; font-size: 0.875rem;">Priority Status:</label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; background: white; padding: 0.5rem 1rem; border: 1px solid var(--border); border-radius: 10px; transition: var(--transition);">
+                    <input type="checkbox" name="is_section_a" value="1" style="width: 18px; height: 18px; accent-color: var(--primary);">
+                    <span style="font-size: 0.875rem; font-weight: 600; color: var(--primary);">Section A (High Priority)</span>
+                </label>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); max-width: 400px;">
+                <i data-lucide="info" style="width: 14px; vertical-align: middle;"></i> Section A classes are prioritized by the scheduler to occupy optimal morning slots.
+            </p>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1rem;">
+            <i data-lucide="save"></i> Save Section
+        </button>
+    </form>
+</div>
+
+<!-- Bulk Actions Bar -->
+<div class="card" style="padding: 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(8px);">
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <button type="button" id="bulkEditBtn" class="btn btn-secondary" style="opacity: 0.5; pointer-events: none;" onclick="handleBulkEditClick()">
+            <i data-lucide="edit-3"></i> Bulk Edit
+        </button>
+        <button type="button" id="bulkDeleteBtn" class="btn btn-secondary" style="opacity: 0.5; pointer-events: none; color: var(--error);" onclick="handleBulkDeleteClick()">
+            <i data-lucide="trash-2"></i> Bulk Delete
+        </button>
+        <div style="width: 1px; height: 24px; background: var(--border); margin: 0 0.5rem;"></div>
+        <button type="button" class="btn btn-secondary" onclick="openImportModal()">
+            <i data-lucide="upload"></i> Import Data
+        </button>
+    </div>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+        <div style="position: relative;">
+            <i data-lucide="filter" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; color: var(--text-muted);"></i>
+            <select id="statusFilter" onchange="filterTable(this.value)" style="padding: 0.5rem 1rem; padding-left: 2rem; border-radius: 10px; border: 1px solid var(--border); font-size: 0.875rem; background: white;">
+                <option value="all">All Status</option>
+                <option value="complete">Complete Only</option>
+                <option value="incomplete">Incomplete Only</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<form id="bulkForm" action="{{ url_for('admin_bulk_edit', module='sections') }}" method="POST">
+    <!-- JHS Sections Table -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-title">
+            <h3 style="color: #1e40af;"><i data-lucide="graduation-cap" style="width: 20px; vertical-align: text-bottom;"></i> Junior High Sections</h3>
+            <span class="badge" style="background: #e0f2fe; color: #1e40af;">JHS</span>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px;"><input type="checkbox" onclick="toggleSelectAll(this)" style="width: 16px; height: 16px;"></th>
+                        <th>Section Name / Dept</th>
+                        <th>Data Status</th>
+                        <th>Grade</th>
+                        <th>Type</th>
+                        <th>Adviser</th>
+                        <th>Home Room</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sections if s.department == 'JHS' %}
+                        {% include 'partials/_section_row.html' %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SHS Sections Table -->
+    <div class="card" style="margin-bottom: 2.5rem;">
+        <div class="card-title">
+            <h3 style="color: #b91c1c;"><i data-lucide="book-marked" style="width: 20px; vertical-align: text-bottom;"></i> Senior High Sections</h3>
+            <span class="badge" style="background: #fee2e2; color: #b91c1c;">SHS</span>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px;"><input type="checkbox" onclick="toggleSelectAll(this)" style="width: 16px; height: 16px;"></th>
+                        <th>Section Name / Dept</th>
+                        <th>Data Status</th>
+                        <th>Grade & Track</th>
+                        <th>Type</th>
+                        <th>Adviser</th>
+                        <th>Home Room</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sections if s.department == 'SHS' %}
+                        {% include 'partials/_section_row.html' %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</form>
+
+<!-- Bulk Edit Modal -->
+<div id="bulkEditModal" class="modal">
+    <div class="modal-content card" style="border:none; box-shadow: var(--shadow-lg);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3><i data-lucide="edit-3" style="width: 20px; vertical-align: middle;"></i> Bulk Edit Sections</h3>
+            <button onclick="closeBulkEditModal()" style="background:none; border:none; cursor:pointer; color: var(--text-muted);"><i data-lucide="x"></i></button>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Department</label>
+                <select form="bulkForm" name="department" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px; background: white;" onchange="updateGradeOptions(this.value, 'bulkGradeSelect', 'bulkTrackContainer')">
+                    <option value="">(No Change)</option>
+                    <option value="JHS">Junior High (JHS)</option>
+                    <option value="SHS">Senior High (SHS)</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Grade Level</label>
+                <select form="bulkForm" name="grade_level" id="bulkGradeSelect" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px; background: white;">
+                    <option value="">(No Change)</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Assigned Adviser</label>
+                <select form="bulkForm" name="adviser_id" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px; background: white;">
+                    <option value="">(No Change)</option>
+                    {% for t in teachers %}
+                        <option value="{{ t.id }}">{{ t.name }} ({{ t.department }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Home Room</label>
+                <select form="bulkForm" name="room_id" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px; background: white;">
+                    <option value="">(No Change)</option>
+                    {% for c in classrooms %}
+                        <option value="{{ c.id }}">{{ c.name }} ({{ c.building }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+            <div id="bulkTrackContainer">
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Academic Track</label>
+                <select form="bulkForm" name="track_select" id="bulkTrackSelect" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px; background: white;">
+                    <option value="">(No Change)</option>
+                    {% for t in tracks %}
+                    <option value="{{ t }}">{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Priority Level</label>
+                <select form="bulkForm" name="is_section_a" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px; background: white;">
+                    <option value="">(No Change)</option>
+                    <option value="true">Section A</option>
+                    <option value="false">Regular Section</option>
+                </select>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button type="button" onclick="confirmBulkEdit()" class="btn btn-primary" style="flex: 1;">Save Changes</button>
+            <button type="button" onclick="closeBulkEditModal()" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Section Modal -->
+<div id="editSectionModal" class="modal">
+    <div class="modal-content card" style="border:none; box-shadow: var(--shadow-lg);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3><i data-lucide="edit-2" style="width: 20px; vertical-align: middle;"></i> Edit Section Details</h3>
+            <button onclick="closeEditModal()" style="background:none; border:none; cursor:pointer; color: var(--text-muted);"><i data-lucide="x"></i></button>
+        </div>
+        
+        <form id="editSectionForm" method="POST" onsubmit="window.submitAdminForm(event, this, 'section')">
+            <input type="hidden" name="id" id="edit_id">
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Department</label>
+                <select name="department" id="edit_department" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; background: white;" onchange="updateGradeOptions(this.value, 'edit_grade_level', 'editTrackContainer')">
+                    <option value="JHS">Junior High School (JHS)</option>
+                    <option value="SHS">Senior High School (SHS)</option>
+                </select>
+            </div>
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Section Name</label>
+                    <input type="text" name="name" id="edit_name" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Grade Level</label>
+                    <select name="grade_level" id="edit_grade_level" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; background: white;">
+                        <option value="7">Gr 7</option>
+                        <option value="8">Gr 8</option>
+                        <option value="9">Gr 9</option>
+                        <option value="10">Gr 10</option>
+                        <option value="11">Gr 11</option>
+                        <option value="12">Gr 12</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Adviser</label>
+                    <select name="adviser_id" id="edit_adviser_id" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; background: white;">
+                        <option value="">-- No Adviser --</option>
+                        {% for t in teachers %}
+                        <option value="{{ t.id }}">{{ t.name }} ({{ t.department }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Home Room</label>
+                    <select name="room_id" id="edit_room_id" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; background: white;">
+                        <option value="">-- No Room --</option>
+                        {% for c in classrooms %}
+                        <option value="{{ c.id }}">{{ c.name }} ({{ c.building }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div id="editTrackContainer" style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Academic Track</label>
+                <select name="track_select" id="edit_track" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; background: white;">
+                    <option value="">None / Both</option>
+                    {% for t in tracks %}
+                    <option value="{{ t }}">{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="margin-bottom: 2rem; padding: 1rem; background: var(--bg-main); border-radius: 12px;">
+                <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                    <input type="checkbox" name="is_section_a" id="edit_is_section_a" value="1" style="width: 18px; height: 18px; accent-color: var(--primary);">
+                    <span style="font-size: 0.875rem; font-weight: 600;">Check as Section A (High Priority)</span>
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">Update Section</button>
+                <button type="button" onclick="closeEditModal()" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Manage Tracks Modal -->
+<div id="manageTracksModal" class="modal">
+    <div class="modal-content card" style="border:none; box-shadow: var(--shadow-lg); max-width: 500px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h3 style="margin: 0; font-size: 1.5rem;"><i data-lucide="settings" style="vertical-align: middle; margin-right: 0.5rem; color: var(--primary);"></i> Manage SHS Tracks</h3>
+            <button type="button" onclick="document.getElementById('manageTracksModal').style.display='none'" style="background:none; border:none; color:var(--text-muted); cursor:pointer;"><i data-lucide="x"></i></button>
+        </div>
+        <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.5rem;">Delete or rename the academic tracks available for Senior High School sections. Deleting a track will detach it from any existing Sections or Subjects.</p>
+        
+        <!-- Add New Track Form -->
+        <form id="addTrackForm" action="{{ url_for('admin_track_add') }}" method="POST" onsubmit="handleTrackAction(event, this)" style="display: flex; gap: 0.5rem; margin-bottom: 2rem; background: var(--bg-main); padding: 1rem; border-radius: 12px;">
+            <input type="text" name="new_track" required placeholder="Enter new track name (e.g. STEM)" style="flex: 1; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px;">
+            <button type="submit" class="btn btn-primary"><i data-lucide="plus" style="width: 16px;"></i> Add Track</button>
+        </form>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 1.5rem;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border);">
+                    <th style="text-align: left; padding: 0.75rem 0;">Track Name</th>
+                    <th style="text-align: right; padding: 0.75rem 0;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="trackTableBody">
+                {% for t in tracks %}
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.75rem 0; font-weight: 500;">{{ t }}</td>
+                    <td style="padding: 0.75rem 0; text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
+                        <button type="button" class="btn btn-secondary" style="padding: 0.4rem 0.6rem;" onclick="promptEditTrack('{{ t }}')">
+                            <i data-lucide="edit-3" style="width: 14px;"></i>
+                        </button>
+                        <button type="button" class="btn" style="background:#fef2f2; color:#ef4444; padding: 0.4rem 0.6rem; border: 1px solid #f87171;" 
+                                onclick="if(confirm('Are you sure you want to delete track {{ t }}?')) handleTrackAction(event, null, '{{ url_for('admin_track_delete', name=t) }}')">
+                            <i data-lucide="trash-2" style="width: 14px;"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="2" style="padding: 1rem 0; text-align: center; color: var(--text-muted);">No tracks defined. Add one by selecting "Other" when creating a section or subject.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Hidden inline edit form -->
+        <form id="editTrackForm" action="{{ url_for('admin_track_edit') }}" method="POST" onsubmit="handleTrackAction(event, this)" style="display: none; background: var(--bg-main); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+            <input type="hidden" name="old_track" id="editOldTrack">
+            <label style="display: block; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;">Rename Track: <span id="editTrackLabel" style="color: var(--primary);"></span></label>
+            <div style="display: flex; gap: 0.5rem;">
+                <input type="text" name="new_track" id="editNewTrack" required placeholder="New Track Name" style="flex: 1; padding: 0.5rem; border: 1px solid var(--border); border-radius: 8px;">
+                <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1rem;">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div id="importModal" class="modal">
+    <div class="modal-content card" style="border:none; box-shadow: var(--shadow-lg); max-width: 800px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3><i data-lucide="upload" style="width: 20px; vertical-align: middle;"></i> Bulk Import Sections</h3>
+            <button onclick="closeImportModal()" style="background:none; border:none; cursor:pointer; color: var(--text-muted);"><i data-lucide="x"></i></button>
+        </div>
+
+        <div class="import-tabs">
+            <div class="import-tab active" onclick="switchImportMode('file', this)">File Upload</div>
+            <div class="import-tab" onclick="switchImportMode('text', this)">Paste Text</div>
+        </div>
+
+        <div id="fileImportSection">
+            <div class="import-dropzone">
+                <input type="file" id="importFile" accept=".csv, .xlsx, .xls" style="display: none;" onchange="handleFileSelect(this)">
+                <label for="importFile" style="cursor: pointer;">
+                    <i data-lucide="file-up" style="width: 48px; height: 48px; color: var(--primary); margin-bottom: 1rem;"></i>
+                    <p style="font-weight: 600;">Choose CSV or Excel file</p>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Supported: .csv, .xlsx, .xls</p>
+                </label>
+            </div>
+        </div>
+
+        <div id="textImportSection" style="display: none;">
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">Format: Name | Dept | Grade | Track | Adviser | Room | Section A (Yes/No)</p>
+            <textarea id="importText" class="import-textarea" placeholder="Example: 10-A | JHS | 10 | | Maria Clara | Room 101 | Yes"></textarea>
+        </div>
+
+        <div id="previewSection" style="display: none;">
+            <div class="preview-table-wrapper">
+                <table class="preview-table" id="previewTable">
+                    <thead>
+                        <tr>
+                            <th>Section Name</th>
+                            <th>Grade/Dept</th>
+                            <th>Status</th>
+                            <th>Details / Errors</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewBody"></tbody>
+                </table>
+            </div>
+            <div id="importStats" style="margin-top: 1rem; font-size: 0.875rem; font-weight: 600;"></div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+            <button type="button" id="previewBtn" onclick="processPreview('sections')" class="btn btn-primary" style="flex: 1;">Preview Data</button>
+            <button type="button" id="confirmImportBtn" onclick="confirmImport('sections')" class="btn btn-primary" style="flex: 1; display: none; background: var(--success);">Confirm & Import</button>
+            <button type="button" onclick="closeImportModal()" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+window.submitAdminForm = function(event, form, type) {
+    if (event) event.preventDefault();
+    
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalHtml = submitBtn.innerHTML;
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Saving...';
+    lucide.createIcons();
+    
+    const formData = new FormData(form);
+    fetch(form.action || window.location.href, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(r => r.json().catch(() => ({ success: false, error: 'Server returned an invalid response. Please refresh.' })))
+    .then(res => {
+        if (res.success) {
+            if (form.getAttribute('id').includes('add')) {
+                const table = document.querySelector('tbody');
+                if (table && res.row_html) {
+                    table.insertAdjacentHTML('afterbegin', res.row_html);
+                }
+                form.reset();
+            } else {
+                const id = form.querySelector('[name="id"]').value;
+                const row = document.getElementById(`${type}-row-${id}`);
+                if (row && res.row_html) {
+                    row.outerHTML = res.row_html;
+                }
+                if (window.closeEditModal) window.closeEditModal();
+            }
+            lucide.createIcons();
+            showToast(res.msg || res.message || 'Success!');
+        } else {
+            showToast(res.error || 'Operation failed', 'error');
+        }
+    })
+    .catch(err => {
+        console.error('AJAX Error:', err);
+        showToast('Communication error: ' + (err.message || err), 'error');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalHtml;
+        lucide.createIcons();
+    });
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    lucide.createIcons();
+    const deptSelect = document.getElementById('deptSelect');
+    if (deptSelect) {
+        deptSelect.addEventListener('change', function() {
+            updateGradeOptions(this.value, 'gradeSelect', 'trackContainer');
+        });
+    }
+});
+
+function handleBulkEditClick() {
+    document.getElementById('bulkEditModal').style.display = 'flex';
+}
+
+function closeBulkEditModal() {
+    document.getElementById('bulkEditModal').style.display = 'none';
+}
+
+function confirmBulkEdit() {
+    document.getElementById('bulkForm').submit();
+}
+
+function handleBulkDeleteClick() {
+    if (confirm('Are you sure you want to delete all selected items?')) {
+        const form = document.getElementById('bulkForm');
+        form.action = "{{ url_for('admin_bulk_delete', module='sections') }}";
+        form.submit();
+    }
+}
+
+function openEditModal(data) {
+    document.getElementById('edit_id').value = data.id;
+    document.getElementById('edit_name').value = data.name;
+    document.getElementById('edit_department').value = data.department;
+    document.getElementById('edit_grade_level').value = data.grade_level;
+    document.getElementById('edit_adviser_id').value = data.adviser_id || '';
+    document.getElementById('edit_room_id').value = data.room_id || '';
+    document.getElementById('edit_track').value = data.track || '';
+    document.getElementById('edit_is_section_a').checked = data.is_section_a === '1';
+    
+    // Initialize grade options and track visibility based on current department
+    updateGradeOptions(data.department, 'edit_grade_level', 'editTrackContainer');
+    // Ensure the correct grade is selected AFTER options are updated
+    setTimeout(() => {
+        document.getElementById('edit_grade_level').value = data.grade_level;
+    }, 10);
+    
+    document.getElementById('editSectionModal').style.display = 'flex';
+    document.getElementById('editSectionForm').action = `/admin/sections/edit/${data.id}`;
+}
+
+function closeEditModal() {
+    document.getElementById('editSectionModal').style.display = 'none';
+}
+
+function openImportModal() {
+    document.getElementById('importModal').style.display = 'flex';
+}
+
+function closeImportModal() {
+    document.getElementById('importModal').style.display = 'none';
+    resetImportModal();
+}
+
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.edit-section-btn');
+    if (btn) {
+        openEditModal(btn.dataset);
+    }
+});
+
+lucide.createIcons();
+
+function updateGradeOptions(dept, selectId, trackId) {
+    const isSHS = dept === 'SHS';
+    const trackContainer = document.getElementById(trackId);
+    if (trackContainer) trackContainer.style.display = isSHS ? 'block' : 'none';
+    
+    const gSelect = document.getElementById(selectId);
+    if (isSHS) {
+        gSelect.innerHTML = (selectId.includes('bulk') ? '<option value="">(No Change)</option>' : '') + '<option value="11">Gr 11</option><option value="12">Gr 12</option>';
+    } else {
+        gSelect.innerHTML = (selectId.includes('bulk') ? '<option value="">(No Change)</option>' : '') + '<option value="7">Gr 7</option><option value="8">Gr 8</option><option value="9">Gr 9</option><option value="10">Gr 10</option>';
+    }
+}
+
+function promptEditTrack(oldName) {
+    const form = document.getElementById('editTrackForm');
+    form.style.display = 'block';
+    document.getElementById('editOldTrack').value = oldName;
+    document.getElementById('editNewTrack').value = oldName;
+    document.getElementById('editTrackLabel').innerText = oldName;
+    document.getElementById('editNewTrack').focus();
+}
+
+async function handleTrackAction(event, form, url) {
+    if (event) event.preventDefault();
+    const actionUrl = url || form.action;
+    const method = form ? 'POST' : 'GET';
+    const body = form ? new FormData(form) : null;
+
+    try {
+        const response = await fetch(actionUrl, {
+            method: method,
+            body: body,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const res = await response.json();
+        if (res.success) {
+            showToast(res.msg);
+            if (form) form.reset();
+            if (form && form.id === 'editTrackForm') form.style.display = 'none';
+            refreshTrackUI(res.tracks);
+        } else {
+            showToast(res.error || 'Operation failed', 'error');
+        }
+    } catch (err) {
+        console.error('AJAX Error:', err);
+        showToast('Communication error', 'error');
+    }
+}
+
+function refreshTrackUI(tracks) {
+    // 1. Update Table in Modal
+    const tbody = document.getElementById('trackTableBody');
+    if (tbody) {
+        if (tracks.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="2" style="padding: 1rem 0; text-align: center; color: var(--text-muted);">No tracks defined.</td></tr>';
+        } else {
+            tbody.innerHTML = tracks.map(t => `
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.75rem 0; font-weight: 500;">${t}</td>
+                    <td style="padding: 0.75rem 0; text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
+                        <button type="button" class="btn btn-secondary" style="padding: 0.4rem 0.6rem;" onclick="promptEditTrack('${t}')">
+                            <i data-lucide="edit-3" style="width: 14px;"></i>
+                        </button>
+                        <button type="button" class="btn" style="background:#fef2f2; color:#ef4444; padding: 0.4rem 0.6rem; border: 1px solid #f87171;" 
+                                onclick="if(confirm('Are you sure you want to delete track ${t}?')) handleTrackAction(event, null, '/admin/tracks/delete/${encodeURIComponent(t)}')">
+                            <i data-lucide="trash-2" style="width: 14px;"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    // 2. Update Dropdowns
+    const dropdowns = ['trackSelect', 'edit_track', 'bulkTrackSelect'];
+    dropdowns.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            const currentVal = el.value;
+            let html = id === 'bulkTrackSelect' ? '<option value="">(No Change)</option>' : '<option value="">-- Choose Track --</option>';
+            tracks.forEach(t => {
+                html += `<option value="${t}" ${t === currentVal ? 'selected' : ''}>${t}</option>`;
+            });
+            el.innerHTML = html;
+        }
+    });
+
+    lucide.createIcons();
+}
+
+function toggleSelectAll(source) {
+    const table = source.closest('table');
+    const checkboxes = table.querySelectorAll('input[name="selected_ids"]');
+    checkboxes.forEach(cb => {
+        const row = cb.closest('.section-row');
+        if (row && row.style.display !== 'none') {
+            cb.checked = source.checked;
+        }
+    });
+    updateBulkButton();
+}
+
+function updateBulkButton() {
+    const selected = document.querySelectorAll('input[name="selected_ids"]:checked');
+    const editBtn = document.getElementById('bulkEditBtn');
+    const deleteBtn = document.getElementById('bulkDeleteBtn');
+    
+    const count = selected.length;
+    if (count > 0) {
+        editBtn.style.opacity = '1';
+        editBtn.style.pointerEvents = 'auto';
+        deleteBtn.style.opacity = '1';
+        deleteBtn.style.pointerEvents = 'auto';
+        editBtn.innerHTML = `<i data-lucide="edit-3" style="width: 14px;"></i> Edit ${count}`;
+        deleteBtn.innerHTML = `<i data-lucide="trash-2" style="width: 14px;"></i> Delete ${count}`;
+    } else {
+        editBtn.style.opacity = '0.5';
+        editBtn.style.pointerEvents = 'none';
+        deleteBtn.style.opacity = '0.5';
+        deleteBtn.style.pointerEvents = 'none';
+        editBtn.innerHTML = `<i data-lucide="edit-3" style="width: 14px;"></i> Bulk Edit`;
+        deleteBtn.innerHTML = `<i data-lucide="trash-2" style="width: 14px;"></i> Bulk Delete`;
+    }
+    lucide.createIcons();
+
+    document.querySelectorAll('.section-row').forEach(row => {
+        const cb = row.querySelector('input[name="selected_ids"]');
+        if (cb && cb.checked) row.style.background = 'rgba(37, 99, 235, 0.05)';
+        else row.style.background = 'transparent';
+    });
+}
+
+function filterTable(status) {
+    const rows = document.querySelectorAll('.section-row');
+    rows.forEach(row => {
+        if (status === 'all') row.style.display = '';
+        else row.style.display = (row.dataset.status === status) ? '' : 'none';
+    });
+}
+</script>
+<style>
+.spin { animation: rotate 2s linear infinite; }
+@keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
+{% endblock %}

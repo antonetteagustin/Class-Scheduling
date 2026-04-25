@@ -1,0 +1,412 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2.5rem;">
+    <div>
+        <h1 style="font-size: 2.25rem; margin-bottom: 0.5rem;">Manage Classrooms</h1>
+        <p style="color: var(--text-muted); font-size: 1.125rem;">Regulate physical spaces, laboratories, and lecture rooms.</p>
+    </div>
+    <button type="button" class="btn btn-primary" onclick="document.getElementById('addSection').scrollIntoView({behavior: 'smooth'})">
+        <i data-lucide="plus"></i> Add Facility
+    </button>
+</div>
+
+<!-- Add New Facility Card -->
+<div id="addSection" class="card" style="margin-bottom: 2rem;">
+    <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i data-lucide="building" style="width: 20px; color: var(--primary);"></i> Register New Facility
+    </h3>
+    <form id="addClassroomForm" action="{{ url_for('admin_classrooms') }}" method="POST">
+        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+            <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Room Name / Identifier</label>
+                <input type="text" name="name" required placeholder="e.g. Science Lab 101" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; font-family: inherit;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Facility Type</label>
+                <select name="room_type" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; font-family: inherit; background-color: white;">
+                    <option value="Room">Lecture Room</option>
+                    <option value="Laboratory">Laboratory / Specialized</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Building / Wing</label>
+                <select name="building" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; font-family: inherit; background-color: white;">
+                    <option value="JHS">Junior High Building</option>
+                    <option value="SHS">Senior High Building</option>
+                    <option value="Both">Shared / Both Complexes</option>
+                </select>
+            </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1rem;">
+            <i data-lucide="save"></i> Register Facility
+        </button>
+    </form>
+</div>
+
+<!-- Bulk Actions & Filters -->
+<div class="card" style="padding: 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(8px);">
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <button type="button" id="bulkEditBtn" class="btn btn-secondary" style="opacity: 0.5; pointer-events: none;" onclick="handleBulkEditClick()">
+            <i data-lucide="edit-3"></i> Bulk Edit
+        </button>
+        <button type="button" id="bulkDeleteBtn" class="btn btn-secondary" style="opacity: 0.5; pointer-events: none; color: var(--error);" onclick="handleBulkDeleteClick()">
+            <i data-lucide="trash-2"></i> Bulk Delete
+        </button>
+        <div style="width: 1px; height: 24px; background: var(--border); margin: 0 0.5rem;"></div>
+        <button type="button" class="btn btn-secondary" onclick="openImportModal()">
+            <i data-lucide="upload"></i> Import Data
+        </button>
+    </div>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+        <div style="position: relative;">
+            <i data-lucide="filter" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; color: var(--text-muted);"></i>
+            <select id="statusFilter" onchange="filterTable(this.value)" style="padding: 0.5rem 1rem; padding-left: 2rem; border-radius: 10px; border: 1px solid var(--border); font-size: 0.875rem; background: white;">
+                <option value="all">All Status</option>
+                <option value="complete">Complete Only</option>
+                <option value="incomplete">Incomplete Only</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<form id="bulkForm" action="{{ url_for('admin_bulk_edit', module='classrooms') }}" method="POST">
+    <!-- JHS Building Table -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-title">
+            <h3 style="color: #1e40af;"><i data-lucide="building-2" style="width: 20px; vertical-align: text-bottom;"></i> JHS Complex Facilities</h3>
+            <span class="badge" style="background: #e0f2fe; color: #1e40af;">JHS Complex</span>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px;"><input type="checkbox" onclick="toggleSelectAll(this)" style="width: 16px; height: 16px;"></th>
+                        <th>Room Identity</th>
+                        <th>Data Status</th>
+                        <th>Classification</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in classrooms if c.building == 'JHS' %}
+                        {% include 'partials/_classroom_row.html' %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SHS Building Table -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-title">
+            <h3 style="color: #b91c1c;"><i data-lucide="building-2" style="width: 20px; vertical-align: text-bottom;"></i> SHS Complex Facilities</h3>
+            <span class="badge" style="background: #fee2e2; color: #b91c1c;">SHS Complex</span>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px;"><input type="checkbox" onclick="toggleSelectAll(this)" style="width: 16px; height: 16px;"></th>
+                        <th>Room Identity</th>
+                        <th>Data Status</th>
+                        <th>Classification</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in classrooms if c.building == 'SHS' %}
+                        {% include 'partials/_classroom_row.html' %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Both Buildings Table -->
+    <div class="card">
+        <div class="card-title">
+            <h3 style="color: #059669;"><i data-lucide="layout" style="width: 20px; vertical-align: text-bottom;"></i> Multi-Use / Shared Facilities</h3>
+            <span class="badge" style="background: #dcfce7; color: #059669;">Universal</span>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px;"><input type="checkbox" onclick="toggleSelectAll(this)" style="width: 16px; height: 16px;"></th>
+                        <th>Room Identity</th>
+                        <th>Data Status</th>
+                        <th>Classification</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in classrooms if c.building == 'Both' %}
+                        {% include 'partials/_classroom_row.html' %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</form>
+
+<!-- Bulk Edit Modal -->
+<div id="bulkEditModal" class="modal">
+    <div class="modal-content card" style="border:none; box-shadow: var(--shadow-lg);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3><i data-lucide="edit-3" style="width: 20px; vertical-align: middle;"></i> Bulk Edit Facilities</h3>
+            <button onclick="closeBulkEditModal()" style="background:none; border:none; cursor:pointer; color: var(--text-muted);"><i data-lucide="x"></i></button>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+            <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Building / Wing</label>
+                <select form="bulkForm" name="building" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px; background: white;">
+                    <option value="">(No Change)</option>
+                    <option value="JHS">Junior High Building</option>
+                    <option value="SHS">Senior High Building</option>
+                    <option value="Both">Shared / Both Complexes</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Facility Type</label>
+                <select form="bulkForm" name="room_type" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px; background: white;">
+                    <option value="">(No Change)</option>
+                    <option value="Room">Lecture Room</option>
+                    <option value="Laboratory">Laboratory / Specialized</option>
+                </select>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button type="button" onclick="confirmBulkEdit()" class="btn btn-primary" style="flex: 1;">Save Changes</button>
+            <button type="button" onclick="closeBulkEditModal()" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Classroom Modal -->
+<div id="editClassroomModal" class="modal">
+    <div class="modal-content card" style="border:none; box-shadow: var(--shadow-lg);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3><i data-lucide="edit-2" style="width: 20px; vertical-align: middle;"></i> Edit Facility Details</h3>
+            <button onclick="closeEditModal()" style="background:none; border:none; cursor:pointer; color: var(--text-muted);"><i data-lucide="x"></i></button>
+        </div>
+        
+        <form id="editClassroomForm" method="POST">
+            <input type="hidden" name="id" id="edit_id">
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Room Name / Identifier</label>
+                <input type="text" name="name" id="edit_name" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                <div>
+                    <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Facility Type</label>
+                    <select name="room_type" id="edit_room_type" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; background: white;">
+                        <option value="Room">Lecture Room</option>
+                        <option value="Laboratory">Laboratory / Specialized</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Building / Wing</label>
+                    <select name="building" id="edit_building" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 12px; background: white;">
+                        <option value="JHS">Junior High Building</option>
+                        <option value="SHS">Senior High Building</option>
+                        <option value="Both">Shared / Both Complexes</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">Update Facility</button>
+                <button type="button" onclick="closeEditModal()" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div id="importModal" class="modal">
+    <div class="modal-content card" style="border:none; box-shadow: var(--shadow-lg); max-width: 800px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3><i data-lucide="upload" style="width: 20px; vertical-align: middle;"></i> Bulk Import Facilities</h3>
+            <button onclick="closeImportModal()" style="background:none; border:none; cursor:pointer; color: var(--text-muted);"><i data-lucide="x"></i></button>
+        </div>
+
+        <div class="import-tabs">
+            <div class="import-tab active" onclick="switchImportMode('file', this)">File Upload</div>
+            <div class="import-tab" onclick="switchImportMode('text', this)">Paste Text</div>
+        </div>
+
+        <div id="fileImportSection">
+            <div class="import-dropzone">
+                <input type="file" id="importFile" accept=".csv, .xlsx, .xls" style="display: none;" onchange="handleFileSelect(this)">
+                <label for="importFile" style="cursor: pointer;">
+                    <i data-lucide="file-up" style="width: 48px; height: 48px; color: var(--primary); margin-bottom: 1rem;"></i>
+                    <p style="font-weight: 600;">Choose CSV or Excel file</p>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Supported: .csv, .xlsx, .xls</p>
+                </label>
+            </div>
+        </div>
+
+        <div id="textImportSection" style="display: none;">
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">Format: Name | Type (Room/Laboratory) | Building (JHS/SHS/Both)</p>
+            <textarea id="importText" class="import-textarea" placeholder="Example: Science Lab 1 | Laboratory | JHS"></textarea>
+        </div>
+
+        <div id="previewSection" style="display: none;">
+            <div class="preview-table-wrapper">
+                <table class="preview-table" id="previewTable">
+                    <thead>
+                        <tr>
+                            <th>Room Info</th>
+                            <th>Type/Building</th>
+                            <th>Status</th>
+                            <th>Details / Errors</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewBody"></tbody>
+                </table>
+            </div>
+            <div id="importStats" style="margin-top: 1rem; font-size: 0.875rem; font-weight: 600;"></div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+            <button type="button" id="previewBtn" onclick="processPreview('classrooms')" class="btn btn-primary" style="flex: 1;">Preview Data</button>
+            <button type="button" id="confirmImportBtn" onclick="confirmImport('classrooms')" class="btn btn-primary" style="flex: 1; display: none; background: var(--success);">Confirm & Import</button>
+            <button type="button" onclick="closeImportModal()" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function handleBulkEditClick() {
+    document.getElementById('bulkEditModal').style.display = 'flex';
+}
+
+function closeBulkEditModal() {
+    document.getElementById('bulkEditModal').style.display = 'none';
+}
+
+function confirmBulkEdit() {
+    document.getElementById('bulkForm').submit();
+}
+
+function handleBulkDeleteClick() {
+    if (confirm('Are you sure you want to delete all selected items?')) {
+        const form = document.getElementById('bulkForm');
+        form.action = "{{ url_for('admin_bulk_delete', module='classrooms') }}";
+        form.submit();
+    }
+}
+
+// Individual Edit Modal Logic
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.edit-classroom-btn')) {
+        const btn = e.target.closest('.edit-classroom-btn');
+        const data = btn.dataset;
+        
+        document.getElementById('edit_id').value = data.id;
+        document.getElementById('edit_name').value = data.name;
+        document.getElementById('edit_room_type').value = data.room_type;
+        document.getElementById('edit_building').value = data.building;
+        
+        document.getElementById('editClassroomModal').style.display = 'flex';
+        document.getElementById('editClassroomForm').action = `/admin/classrooms/edit/${data.id}`;
+    }
+});
+
+function closeEditModal() {
+    document.getElementById('editClassroomModal').style.display = 'none';
+}
+
+function openImportModal() {
+    document.getElementById('importModal').style.display = 'flex';
+}
+
+function closeImportModal() {
+    document.getElementById('importModal').style.display = 'none';
+    resetImportModal();
+}
+
+function filterTable(status) {
+    const rows = document.querySelectorAll('.classroom-row');
+    rows.forEach(row => {
+        if (status === 'all') row.style.display = '';
+        else row.style.display = (row.dataset.status === status) ? '' : 'none';
+    });
+}
+
+document.getElementById('addClassroomForm').onsubmit = function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    fetch(this.action, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            const bldg = formData.get('building');
+            const bldgTables = { 'JHS': 0, 'SHS': 1, 'Both': 2 };
+            const tbodies = document.querySelectorAll('tbody');
+            const targetTbody = tbodies[bldgTables[bldg]];
+            if (targetTbody) {
+                targetTbody.insertAdjacentHTML('afterbegin', res.row_html);
+                lucide.createIcons();
+            }
+            this.reset();
+            showToast(res.msg || 'Facility successfully registered!');
+        } else {
+            showToast(res.error || 'Failed to register facility', 'error');
+        }
+    })
+    .catch(err => showToast('Network Error: ' + err, 'error'));
+};
+
+function toggleSelectAll(source) {
+    const table = source.closest('table');
+    const checkboxes = table.querySelectorAll('input[name="selected_ids"]');
+    checkboxes.forEach(cb => {
+        const row = cb.closest('.classroom-row');
+        if (row && row.style.display !== 'none') {
+            cb.checked = source.checked;
+        }
+    });
+    updateBulkButton();
+}
+
+function updateBulkButton() {
+    const selected = document.querySelectorAll('input[name="selected_ids"]:checked');
+    const editBtn = document.getElementById('bulkEditBtn');
+    const deleteBtn = document.getElementById('bulkDeleteBtn');
+    
+    const count = selected.length;
+    if (count > 0) {
+        editBtn.style.opacity = '1';
+        editBtn.style.pointerEvents = 'auto';
+        deleteBtn.style.opacity = '1';
+        deleteBtn.style.pointerEvents = 'auto';
+        editBtn.innerHTML = `<i data-lucide="edit-3" style="width: 14px;"></i> Edit ${count}`;
+        deleteBtn.innerHTML = `<i data-lucide="trash-2" style="width: 14px;"></i> Delete ${count}`;
+    } else {
+        editBtn.style.opacity = '0.5';
+        editBtn.style.pointerEvents = 'none';
+        deleteBtn.style.opacity = '0.5';
+        deleteBtn.style.pointerEvents = 'none';
+        editBtn.innerHTML = `<i data-lucide="edit-3" style="width: 14px;"></i> Bulk Edit`;
+        deleteBtn.innerHTML = `<i data-lucide="trash-2" style="width: 14px;"></i> Bulk Delete`;
+    }
+    lucide.createIcons();
+
+    document.querySelectorAll('.classroom-row').forEach(row => {
+        const cb = row.querySelector('input[name="selected_ids"]');
+        if (cb && cb.checked) row.style.background = 'rgba(37, 99, 235, 0.05)';
+        else row.style.background = 'transparent';
+    });
+}
+</script>
+{% endblock %}

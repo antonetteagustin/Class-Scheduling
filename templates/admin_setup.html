@@ -1,0 +1,1063 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Export Progress Overlay -->
+<div id="exportOverlay"
+    style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); z-index: 9999; display: none; align-items: center; justify-content: center; color: white; flex-direction: column; text-align: center;">
+    <div
+        style="background: white; padding: 2.5rem; border-radius: 24px; width: 90%; max-width: 450px; color: #1e293b; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+        <div
+            style="background: #eff6ff; width: 64px; height: 64px; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: #2563eb;">
+            <i data-lucide="download-cloud" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3 id="exportTitle" style="margin-bottom: 0.5rem; font-size: 1.25rem; font-weight: 800;">Processing Export</h3>
+        <p id="exportStatus" style="color: #64748b; font-size: 0.9375rem;">Initializing...</p>
+        <div
+            style="width: 100%; height: 10px; background: #f1f5f9; border-radius: 10px; margin: 1.5rem 0; overflow: hidden;">
+            <div id="exportProgressBar"
+                style="height: 100%; background: #2563eb; width: 0%; transition: width 0.3s ease;"></div>
+        </div>
+        <p style="font-size: 0.8125rem; color: #94a3b8; font-weight: 500; margin-bottom: 1.5rem;">Please do not close this tab.</p>
+        <button onclick="cancelExport()" class="btn btn-secondary"
+            style="width: 100%; border-color: #e2e8f0; color: #64748b; font-size: 0.875rem;">
+            <i data-lucide="x-circle" style="width: 16px; vertical-align: middle;"></i> Cancel Export
+        </button>
+    </div>
+</div>
+<div class="dashboard-header"
+    style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2.5rem;">
+    <div>
+        <h1 style="font-size: 2.25rem; margin-bottom: 0.5rem;">Schedule Generation</h1>
+        <p style="color: var(--text-muted); font-size: 1.125rem;">Command center for AI-driven timetable generation and
+            deployment.</p>
+    </div>
+    <div style="display: flex; gap: 1rem;">
+        <button type="button" class="btn btn-secondary"
+            onclick="document.getElementById('history-panel').scrollIntoView({behavior: 'smooth'})">
+            <i data-lucide="history"></i> View History
+        </button>
+        <button type="button" class="btn btn-primary"
+            onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})">
+            <i data-lucide="table"></i> View Timetables
+        </button>
+    </div>
+</div>
+{% set incomplete = (sections|length == 0 or teachers|length == 0 or classrooms|length == 0) %}
+{% if incomplete %}
+<div class="card" style="background: #fffbeb; border-left: 4px solid #f59e0b; margin-bottom: 2.5rem; padding: 1.5rem;">
+    <div style="display: flex; align-items: flex-start; gap: 1rem;">
+        <div style="background: #fef3c7; color: #d97706; padding: 0.75rem; border-radius: 12px;">
+            <i data-lucide="alert-triangle"></i>
+        </div>
+        <div>
+            <h4 style="color: #92400e; margin: 0 0 0.5rem 0; font-size: 1rem;">System Configuration Incomplete</h4>
+            <p style="color: #b45309; margin: 0; font-size: 0.875rem; line-height: 1.5;">
+                To generate a valid schedule, the system requires <strong>Teachers</strong>, <strong>Sections</strong>,
+                and <strong>Classrooms</strong>.
+                One or more of these are currently missing. Please visit the <a href="{{ url_for('admin_dashboard') }}"
+                    style="color: #92400e; font-weight: 700; text-decoration: underline;">Admin Dashboard</a> to
+                populate your data.
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; margin-bottom: 2.5rem;">
+    <!-- Main Generation Card -->
+    <div class="card"
+        style="background: linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%); color: white; border: none; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <h3 style="color: white; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;">
+                <i data-lucide="zap" style="width: 24px; fill: white;"></i> AI Engine
+            </h3>
+            <p style="opacity: 0.9; font-size: 0.9375rem; line-height: 1.6; margin-bottom: 2rem;">
+                The AI engine will synthesize all constraints, teacher preferences, and room availability to construct
+                an optimal school-wide schedule.
+            </p>
+        </div>
+
+        <div style="position: relative; min-height: 120px;">
+            <div id="generatorMainUI" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div
+                    style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 12px; border: 1px dashed rgba(255,255,255,0.3);">
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span
+                            style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #fdf2f2;">Phase
+                            1</span>
+                    </div>
+                    <button onclick="startGeneration('jhs')" class="btn" id="generateBtnJHS"
+                        style="background: white; color: var(--primary); width: 100%; padding: 0.75rem; font-weight: 700; font-size: 0.9375rem; box-shadow: var(--shadow-sm);">
+                        Generate JHS Schedule
+                    </button>
+                </div>
+
+                <div style="text-align: center; position: relative; margin: 0.25rem 0;">
+                    <div style="height: 1px; background: rgba(255,255,255,0.2); width: 100%;"></div>
+                    <span
+                        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1d4ed8; padding: 0 0.5rem; font-size: 0.7rem; color: rgba(255,255,255,0.7);">NEXT
+                        STEP</span>
+                </div>
+
+                <div
+                    style="background: rgba(255,255,255,0.05); padding: 0.75rem; border-radius: 12px; display: flex; align-items: center; gap: 0.75rem;">
+                    <div
+                        style="width: 24px; height: 24px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800;">
+                        2</div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 0.8125rem; font-weight: 600;">Flag Hybrid Teachers</div>
+                        <div style="font-size: 0.65rem; opacity: 0.8;">Assign SHS subjects to JHS faculty in <a
+                                href="{{ url_for('admin_teachers') }}"
+                                style="color: white; text-decoration: underline;">Teacher Management</a></div>
+                    </div>
+                </div>
+
+                <div
+                    style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 12px; border: 1px dashed rgba(255,255,255,0.3);">
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span
+                            style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #fdf2f2;">Phase
+                            2</span>
+                        <i data-lucide="lock" style="width: 14px; opacity: 0.7;"
+                            title="JHS Block Protection Rule Active"></i>
+                    </div>
+                    <button onclick="startGeneration('shs')" class="btn" id="generateBtnSHS"
+                        style="background: white; color: #b91c1c; width: 100%; padding: 0.75rem; font-weight: 700; font-size: 0.9375rem; box-shadow: var(--shadow-sm);">
+                        Generate SHS Schedule
+                    </button>
+                </div>
+
+                <div style="margin-top: 0.5rem;">
+                    <button onclick="startGeneration('all')" class="btn" id="generateBtnAll"
+                        style="background: transparent; color: white; border: 1px solid rgba(255,255,255,0.4); width: 100%; padding: 0.5rem; font-size: 0.75rem; font-weight: 600;">
+                        Full Re-Generation (Global)
+                    </button>
+                </div>
+            </div>
+
+            <div id="generatorOverlay">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <span class="generator-status" id="genStatus">Starting engine...</span>
+                    <span class="generator-status" id="genProgressLabel">0%</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="genProgressBar"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                    <p style="font-size: 0.75rem; opacity: 0.8;">This may take a minute. Do not close this tab.</p>
+                    <button onclick="cancelGeneration()" class="btn btn-secondary"
+                        style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: rgba(255,255,255,0.2); color: white; border-color: rgba(255,255,255,0.3);">
+                        <i data-lucide="x-circle" style="width: 12px; vertical-align: middle;"></i> Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div
+            style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.2); display: flex; justify-content: space-between; font-size: 0.8125rem;">
+            <div>
+                <span style="opacity: 0.7; display: block;">Last Generation</span>
+                <span style="font-weight: 600;">{{ settings.get('last_setup_time', 'Never') }}</span>
+            </div>
+            <div style="text-align: right;">
+                <span style="opacity: 0.7; display: block;">Processing Time</span>
+                <span style="font-weight: 600;" id="live_processing_time">{{ settings.get('setup_duration', '0')
+                    }}s</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats & Quick Actions -->
+    <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem;">
+        <div class="card"
+            style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+            <div
+                style="width: 64px; height: 64px; background: #fff7ed; color: #ea580c; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                <i data-lucide="alert-triangle" style="width: 32px;"></i>
+            </div>
+            <h4 id="live_conflicts"
+                style="font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem; color: var(--text-main);">{{
+                settings.get('setup_conflicts', '0') }}</h4>
+            <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem;">Constraints Resolved</p>
+            {% if settings.get('setup_conflicts', '0') != '0' %}
+            <button onclick="document.getElementById('conflictModal').showModal()" class="btn btn-secondary"
+                style="padding: 0.5rem 1rem; font-size: 0.75rem;">
+                View Conflict Log
+            </button>
+            {% endif %}
+        </div>
+
+        <!-- Grouped Data Export Panel -->
+        <div class="card" style="display: flex; flex-direction: column; gap: 1.5rem; min-height: 280px; justify-content: center;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 1.25rem;">
+                <h4 style="margin: 0; display: flex; align-items: center; gap: 1rem; font-size: 1.125rem;">
+                    <i data-lucide="download-cloud" style="width: 24px; color: var(--primary);"></i> Grouped Data Export
+                </h4>
+                <div style="display: flex; gap: 0.75rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.8125rem; font-weight: 700; background: #fff1f2; color: #ef4444; padding: 6px 12px; border-radius: 8px;">
+                        <input type="radio" name="bulkFormat" value="pdf" checked style="width: 16px; height: 16px; accent-color: #ef4444;"> PDF
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.8125rem; font-weight: 700; background: #ecfdf5; color: #10b981; padding: 6px 12px; border-radius: 8px;">
+                        <input type="radio" name="bulkFormat" value="excel" style="width: 16px; height: 16px; accent-color: #10b981;"> XL
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.8125rem; font-weight: 700; background: #eff6ff; color: #2b579a; padding: 6px 12px; border-radius: 8px;">
+                        <input type="radio" name="bulkFormat" value="word" style="width: 16px; height: 16px; accent-color: #2b579a;"> DOC
+                    </label>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 0.75rem; border-bottom: 1px dashed var(--border);">
+                    <small style="font-weight: 800; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Sections</small>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button onclick="handleBulkDownload('section', 'All')" class="btn btn-secondary" style="font-size: 0.75rem; padding: 6px 14px; font-weight: 700;">All</button>
+                        <button onclick="handleBulkDownload('section', 'JHS')" class="btn btn-secondary" style="font-size: 0.75rem; padding: 6px 14px; font-weight: 700;">JHS</button>
+                        <button onclick="handleBulkDownload('section', 'SHS')" class="btn btn-secondary" style="font-size: 0.75rem; padding: 6px 14px; font-weight: 700;">SHS</button>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 0.75rem; border-bottom: 1px dashed var(--border);">
+                    <small style="font-weight: 800; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Faculty</small>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button onclick="handleBulkDownload('teacher', 'All')" class="btn btn-secondary" style="font-size: 0.75rem; padding: 6px 12px; font-weight: 700;">All</button>
+                        <button onclick="handleBulkDownload('teacher', 'JHS')" class="btn btn-secondary" style="font-size: 0.75rem; padding: 6px 12px; font-weight: 700;">JHS</button>
+                        <button onclick="handleBulkDownload('teacher', 'SHS')" class="btn btn-secondary" style="font-size: 0.75rem; padding: 6px 12px; font-weight: 700;">SHS</button>
+                        <button onclick="handleBulkDownload('teacher', 'Both')" class="btn btn-secondary" style="font-size: 0.75rem; padding: 6px 12px; font-weight: 800; border-color: var(--primary); color: var(--primary);">Both</button>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                    <small style="font-weight: 800; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Rooms</small>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button onclick="handleBulkDownload('classroom', 'All')" class="btn btn-secondary" style="font-size: 0.75rem; padding: 6px 12px; font-weight: 700;">All</button>
+                        <button onclick="handleBulkDownload('classroom', 'JHS')" class="btn btn-secondary" style="font-size: 0.75rem; padding: 6px 12px; font-weight: 700;">JHS</button>
+                        <button onclick="handleBulkDownload('classroom', 'SHS')" class="btn btn-secondary" style="font-size: 0.75rem; padding: 6px 12px; font-weight: 700;">SHS</button>
+                        <button onclick="handleBulkDownload('classroom', 'Both')" class="btn btn-secondary" style="font-size: 0.75rem; padding: 6px 12px; font-weight: 800; border-color: var(--primary); color: var(--primary);">Both</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.8125rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.75rem; filter: opacity(0.85);">
+                <i data-lucide="info" style="width: 16px;"></i> 
+                <span>Presence-based exports for <strong>active</strong> generation only.</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule History & Undo Panel -->
+<details id="history-panel" class="card" style="margin-bottom: 2.5rem; border-top: 4px solid var(--warning);">
+    <summary
+        style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; list-style: none;">
+        <h3 style="display: flex; align-items: center; gap: 0.75rem; color: #b45309;">
+            <i data-lucide="archive" style="width: 24px;"></i> Generation History
+        </h3>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span class="badge" style="background: #fef3c7; color: #b45309; font-weight: 700;">Archives Only</span>
+            <i data-lucide="chevron-down" class="collapse-icon" style="width: 20px; transition: transform 0.3s;"></i>
+        </div>
+    </summary>
+
+    <div class="table-wrapper" style="margin-top: 1.5rem;">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 80px;">Run ID</th>
+                    <th>Timestamp</th>
+                    <th>Runtime</th>
+                    <th>Conflict Count</th>
+                    <th>Current Status</th>
+                    <th style="text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for run in runs %}
+                <tr style="{% if run.is_active %}background: rgba(16, 185, 129, 0.05);{% endif %}">
+                    <td style="font-family: monospace; font-weight: 700; color: var(--text-muted);">#{{ run.id | string
+                        | truncate(8, True, '') }}</td>
+                    <td style="font-weight: 600; color: var(--text-main);">{{ run.created_at.strftime('%b %d, %Y %I:%M
+                        %p') }}</td>
+                    <td><span style="color: var(--text-muted); font-size: 0.8125rem;">{{ "%.2f"|format(run.duration)
+                            }}s</span></td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="font-weight: 700; color: {{ '#ef4444' if run.conflicts > 0 else '#10b981' }};">
+                                {{ run.conflicts }}
+                            </span>
+                            {% if run.conflicts > 0 %}
+                            <button type="button" class="btn btn-secondary"
+                                style="padding: 2px 6px; font-size: 0.65rem;" onclick="showHistoryLog('{{ run.id }}')">
+                                <i data-lucide="scroll-text" style="width: 10px;"></i> Logs
+                            </button>
+                            <div id="log-data-{{ run.id }}" style="display: none;">{{ run.conflict_log }}</div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if run.is_active %}
+                        <span class="badge badge-complete" style="background: #dcfce7; color: #166534;"><i
+                                data-lucide="check-circle-2"
+                                style="width: 12px; vertical-align: middle; margin-right: 4px;"></i> ACTIVE
+                            VERSION</span>
+                        {% else %}
+                        <span class="badge"
+                            style="background: var(--bg-main); color: var(--text-muted);">ARCHIVED</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        {% if not run.is_active %}
+                        <form action="{{ url_for('restore_schedule', run_id=run.id) }}" method="POST"
+                            onsubmit="return confirm('Restore this schedule as the active version? This will update all teacher and student dashboards.');">
+                            <button type="submit" class="btn btn-secondary"
+                                style="padding: 6px 12px; font-size: 0.75rem; border-color: var(--warning); color: #d97706;">
+                                <i data-lucide="rotate-ccw" style="width: 12px;"></i> Restore
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                        <i data-lucide="search-slash"
+                            style="width: 48px; opacity: 0.3; margin-bottom: 1rem; display: block; margin-left: auto; margin-right: auto;"></i>
+                        No recorded generation history.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</details>
+
+<!-- Included for PDF Generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<!-- Visual Search Bar -->
+<div class="card"
+    style="margin-bottom: 2.5rem; background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(8px); padding: 1.25rem;">
+    <div style="position: relative; max-width: 600px; margin: 0 auto;">
+        <i data-lucide="search"
+            style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); width: 20px; color: var(--text-muted);"></i>
+        <input type="text" id="scheduleSearch" placeholder="Search by section, teacher, or room name..."
+            onkeyup="filterSchedules()"
+            style="width: 100%; padding: 1rem 1rem 1rem 3rem; border: 2px solid var(--border); border-radius: 16px; font-size: 1rem; font-family: inherit; transition: var(--transition); background: white;">
+    </div>
+</div>
+
+<!-- Timetable Explorer -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
+        <h3 style="font-size: 1.5rem;"><i data-lucide="layout-grid"
+                style="width: 24px; vertical-align: middle; color: var(--primary);"></i> Timetable Explorer</h3>
+        <div style="display: flex; gap: 0.5rem; background: var(--bg-main); padding: 4px; border-radius: 10px;">
+            <button onclick="switchExploreTab('sections')" id="tab-sections"
+                class="btn explore-tab active">Sections</button>
+            <button onclick="switchExploreTab('teachers')" id="tab-teachers" class="btn explore-tab">Teachers</button>
+            <button onclick="switchExploreTab('rooms')" id="tab-rooms" class="btn explore-tab">Classrooms</button>
+        </div>
+    </div>
+
+    <!-- Section Hub -->
+    <div id="sections-container" class="explore-content">
+        <h4
+            style="margin-bottom: 2rem; color: #1e40af; display: flex; align-items: center; gap: 0.5rem; border-bottom: 2px solid #e0e7ff; padding-bottom: 0.5rem;">
+            <i data-lucide="users" style="width: 20px;"></i> Junior High Sections (JHS)
+        </h4>
+
+        {% for grade in jhs_grades %}
+        <div style="margin-bottom: 3rem;">
+            <h5
+                style="font-size: 1rem; color: #64748b; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span
+                    style="background: #e0e7ff; color: #1e40af; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: 800;">{{
+                    grade }}</span>
+                Grade {{ grade }} Sections
+            </h5>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+                {% for s in sections if s.department == 'JHS' and s.grade_level == grade %}
+                <details class="schedule-item card-link" data-type="section" data-dept="JHS" data-name="{{ s.name }}"
+                    data-room="{{ s.room.name if s.room else 'None' }}"
+                    data-adviser="{{ s.adviser.name if s.adviser else 'None' }}">
+                    <summary
+                        style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; cursor: pointer; color: var(--text-main); font-size: 0.9375rem;">
+                        <span>{{ s.name }}</span>
+                        <i data-lucide="chevron-down" style="width: 16px;"></i>
+                    </summary>
+                    <div style="margin-top: 1.5rem;">
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                            <a href="{{ url_for('export_pdf', view_type='section', id=s.id) }}" target="_blank"
+                                class="btn btn-secondary" style="flex: 1; font-size: 0.75rem; padding: 0.5rem;"><i
+                                    data-lucide="file-type-2" style="width: 12px;"></i> PDF</a>
+                            <a href="{{ url_for('export_excel', view_type='section', id=s.id) }}"
+                                class="btn btn-secondary"
+                                style="flex: 1; font-size: 0.75rem; padding: 0.5rem; color: #166534; border-color: #dcfce7;"><i
+                                    data-lucide="file-spreadsheet" style="width: 12px;"></i> Excel</a>
+                            <a href="{{ url_for('export_word', view_type='section', id=s.id) }}"
+                                class="btn btn-secondary"
+                                style="flex: 1; font-size: 0.75rem; padding: 0.5rem; color: #2b579a; border-color: #e2e8f0;"><i
+                                    data-lucide="file-text" style="width: 12px;"></i> Word</a>
+                        </div>
+                        {% set grid_data = section_grids[s.id] %}
+                        {% with color_type='section' %}{% include "_timetable_grid.html" %}{% endwith %}
+                    </div>
+                </details>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <h4
+            style="margin-bottom: 2rem; color: #b91c1c; display: flex; align-items: center; gap: 0.5rem; border-bottom: 2px solid #fee2e2; padding-bottom: 0.5rem; margin-top: 4rem;">
+            <i data-lucide="book-marked" style="width: 20px;"></i> Senior High Sections (SHS)
+        </h4>
+
+        {% for grade in shs_grades %}
+        <div style="margin-bottom: 3rem;">
+            <h5
+                style="font-size: 1rem; color: #64748b; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span
+                    style="background: #fee2e2; color: #b91c1c; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: 800;">{{
+                    grade }}</span>
+                Grade {{ grade }} Sections
+            </h5>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+                {% for s in sections if s.department == 'SHS' and s.grade_level == grade %}
+                <details class="schedule-item card-link" data-type="section" data-dept="SHS" data-name="{{ s.name }}"
+                    data-track="{{ s.track or '' }}">
+                    <summary
+                        style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; cursor: pointer; color: var(--text-main); font-size: 0.9375rem;">
+                        <span>{{ s.name }} ({{ s.track }})</span>
+                        <i data-lucide="chevron-down" style="width: 16px;"></i>
+                    </summary>
+                    <div style="margin-top: 1.5rem;">
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                            <a href="{{ url_for('export_pdf', view_type='section', id=s.id) }}" target="_blank"
+                                class="btn btn-secondary" style="flex: 1; font-size: 0.75rem; padding: 0.5rem;"><i
+                                    data-lucide="file-type-2" style="width: 12px;"></i> PDF</a>
+                            <a href="{{ url_for('export_excel', view_type='section', id=s.id) }}"
+                                class="btn btn-secondary"
+                                style="flex: 1; font-size: 0.75rem; padding: 0.5rem; color: #166534; border-color: #dcfce7;"><i
+                                    data-lucide="file-spreadsheet" style="width: 12px;"></i> Excel</a>
+                            <a href="{{ url_for('export_word', view_type='section', id=s.id) }}"
+                                class="btn btn-secondary"
+                                style="flex: 1; font-size: 0.75rem; padding: 0.5rem; color: #2b579a; border-color: #e2e8f0;"><i
+                                    data-lucide="file-text" style="width: 12px;"></i> Word</a>
+                        </div>
+                        {% set grid_data = section_grids[s.id] %}
+                        {% with color_type='section' %}{% include "_timetable_grid.html" %}{% endwith %}
+                    </div>
+                </details>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Teacher Hub (Hidden by default) -->
+    <div id="teachers-container" class="explore-content" style="display: none;">
+        <!-- JHS Teachers -->
+        <h4 style="margin-bottom: 1.5rem; color: #1e40af; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="user-check" style="width: 18px;"></i> Junior High Faculty (JHS)
+        </h4>
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 3rem;">
+            {% for t in teachers if t.department == 'JHS' %}
+            <details class="schedule-item card-link" data-type="teacher" data-name="{{ t.name }}" data-dept="JHS">
+                <summary
+                    style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; cursor: pointer; color: var(--text-main); font-size: 0.9375rem;">
+                    <span>{{ t.name }}</span>
+                    <i data-lucide="chevron-down" style="width: 16px;"></i>
+                </summary>
+                <div style="margin-top: 1.5rem;">
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                        <a href="{{ url_for('export_pdf', view_type='teacher', id=t.id) }}" target="_blank"
+                            class="btn btn-secondary" style="flex: 1; font-size: 0.75rem; padding: 0.5rem;"><i
+                                data-lucide="file-type-2" style="width: 12px;"></i> PDF</a>
+                        <a href="{{ url_for('export_excel', view_type='teacher', id=t.id) }}" class="btn btn-secondary"
+                            style="flex: 1; font-size: 0.75rem; padding: 0.5rem; color: #166534; border-color: #dcfce7;"><i
+                                data-lucide="file-spreadsheet" style="width: 12px;"></i> Excel</a>
+                        <a href="{{ url_for('export_word', view_type='teacher', id=t.id) }}" class="btn btn-secondary"
+                            style="flex: 1; font-size: 0.75rem; padding: 0.5rem; color: #2b579a; border-color: #e2e8f0;"><i
+                                data-lucide="file-text" style="width: 12px;"></i> Word</a>
+                    </div>
+                    {% set grid_data = teacher_grids[t.id] %}
+                    {% with color_type='teacher' %}{% include "_timetable_grid.html" %}{% endwith %}
+                </div>
+            </details>
+            {% endfor %}
+        </div>
+
+        <!-- SHS Teachers -->
+        <h4 style="margin-bottom: 1.5rem; color: #b91c1c; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="award" style="width: 18px;"></i> Senior High Faculty (SHS)
+        </h4>
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 3rem;">
+            {% for t in teachers if t.department == 'SHS' %}
+            <details class="schedule-item card-link" data-type="teacher" data-name="{{ t.name }}" data-dept="SHS">
+                <summary
+                    style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; cursor: pointer; color: var(--text-main); font-size: 0.9375rem;">
+                    <span>{{ t.name }}</span>
+                    <i data-lucide="chevron-down" style="width: 16px;"></i>
+                </summary>
+                <div style="margin-top: 1.5rem;">
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                        <a href="{{ url_for('export_pdf', view_type='teacher', id=t.id) }}" target="_blank"
+                            class="btn btn-secondary" style="flex: 1; font-size: 0.75rem; padding: 0.5rem;"><i
+                                data-lucide="file-type-2" style="width: 12px;"></i> PDF</a>
+                        <a href="{{ url_for('export_excel', view_type='teacher', id=t.id) }}" class="btn btn-secondary"
+                            style="flex: 1; font-size: 0.75rem; padding: 0.5rem; color: #166534; border-color: #dcfce7;"><i
+                                data-lucide="file-spreadsheet" style="width: 12px;"></i> Excel</a>
+                        <a href="{{ url_for('export_word', view_type='teacher', id=t.id) }}" class="btn btn-secondary"
+                            style="flex: 1; font-size: 0.75rem; padding: 0.5rem; color: #2b579a; border-color: #e2e8f0;"><i
+                                data-lucide="file-text" style="width: 12px;"></i> Word</a>
+                    </div>
+                    {% set grid_data = teacher_grids[t.id] %}
+                    {% with color_type='teacher' %}{% include "_timetable_grid.html" %}{% endwith %}
+                </div>
+            </details>
+            {% endfor %}
+        </div>
+
+        <!-- Both JHS & SHS Teachers -->
+        <h4 style="margin-bottom: 1.5rem; color: #4338ca; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="users-2" style="width: 18px;"></i> Cross-Department Faculty (Both)
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+            {% for t in teachers if t.department == 'Both' %}
+            <details class="schedule-item card-link" data-type="teacher" data-name="{{ t.name }}" data-dept="Both">
+                <summary
+                    style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; cursor: pointer; color: var(--text-main); font-size: 0.9375rem;">
+                    <span>{{ t.name }}</span>
+                    <i data-lucide="chevron-down" style="width: 16px;"></i>
+                </summary>
+                <div style="margin-top: 1.5rem;">
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                        <a href="{{ url_for('export_pdf', view_type='teacher', id=t.id) }}" target="_blank"
+                            class="btn btn-secondary" style="flex: 1; font-size: 0.75rem; padding: 0.5rem;"><i
+                                data-lucide="file-type-2" style="width: 12px;"></i> PDF</a>
+                        <a href="{{ url_for('export_excel', view_type='teacher', id=t.id) }}" class="btn btn-secondary"
+                            style="flex: 1; font-size: 0.75rem; padding: 0.5rem; color: #166534; border-color: #dcfce7;"><i
+                                data-lucide="file-spreadsheet" style="width: 12px;"></i> Excel</a>
+                        <a href="{{ url_for('export_word', view_type='teacher', id=t.id) }}" class="btn btn-secondary"
+                            style="flex: 1; font-size: 0.75rem; padding: 0.5rem; color: #2b579a; border-color: #e2e8f0;"><i
+                                data-lucide="file-text" style="width: 12px;"></i> Word</a>
+                    </div>
+                    {% set grid_data = teacher_grids[t.id] %}
+                    {% with color_type='teacher' %}{% include "_timetable_grid.html" %}{% endwith %}
+                </div>
+            </details>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Room Hub (Hidden by default) -->
+    <div id="rooms-container" class="explore-content" style="display: none;">
+        <h4
+            style="margin-bottom: 2rem; color: #1e40af; display: flex; align-items: center; gap: 0.5rem; border-bottom: 2px solid #e0e7ff; padding-bottom: 0.5rem;">
+            <i data-lucide="door-open" style="width: 20px;"></i> Facility Explorer (Classrooms)
+        </h4>
+
+        <!-- JHS Rooms -->
+        <div style="margin-bottom: 3rem;">
+            <h5
+                style="font-size: 0.875rem; color: #64748b; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.5rem;">
+                <span
+                    style="background: #e0e7ff; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.75rem;">JHS</span>
+                Junior High Building
+            </h5>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+                {% for r in classrooms if r.building == 'JHS' %}
+                <details class="schedule-item card-link" data-type="classroom" data-name="{{ r.name }}"
+                    data-building="JHS">
+                    <summary
+                        style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; cursor: pointer; color: var(--text-main); font-size: 0.9375rem;">
+                        <span>{{ r.name }}</span>
+                        <i data-lucide="chevron-down" style="width: 16px;"></i>
+                    </summary>
+                    <div style="margin-top: 1.5rem;">
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                            <a href="{{ url_for('export_pdf', view_type='classroom', id=r.id) }}" target="_blank"
+                                class="btn btn-secondary" style="flex: 1; font-size: 0.75rem; padding: 0.5rem;"><i
+                                    data-lucide="file-type-2" style="width: 12px;"></i> PDF</a>
+                            <a href="{{ url_for('export_excel', view_type='classroom', id=r.id) }}"
+                                class="btn btn-secondary"
+                                style="flex: 1; font-size: 0.75rem; padding: 0.5rem; color: #166534; border-color: #dcfce7;"><i
+                                    data-lucide="file-spreadsheet" style="width: 12px;"></i> Excel</a>
+                            <a href="{{ url_for('export_word', view_type='classroom', id=r.id) }}"
+                                class="btn btn-secondary"
+                                style="flex: 1; font-size: 0.75rem; padding: 0.5rem; color: #2b579a; border-color: #e2e8f0;"><i
+                                    data-lucide="file-text" style="width: 12px;"></i> Word</a>
+                        </div>
+                        {% set grid_data = room_grids[r.id] %}
+                        {% with color_type='classroom' %}{% include "_timetable_grid.html" %}{% endwith %}
+                    </div>
+                </details>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- SHS Rooms -->
+        <div style="margin-bottom: 3rem;">
+            <h5
+                style="font-size: 0.875rem; color: #64748b; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.5rem;">
+                <span
+                    style="background: #fee2e2; color: #b91c1c; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.75rem;">SHS</span>
+                Senior High Building
+            </h5>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+                {% for r in classrooms if r.building == 'SHS' %}
+                <details class="schedule-item card-link" data-type="classroom" data-name="{{ r.name }}"
+                    data-building="SHS">
+                    <summary
+                        style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; cursor: pointer; color: var(--text-main); font-size: 0.9375rem;">
+                        <span>{{ r.name }}</span>
+                        <i data-lucide="chevron-down" style="width: 16px;"></i>
+                    </summary>
+                    <div style="margin-top: 1.5rem;">
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                            <a href="{{ url_for('export_pdf', view_type='classroom', id=r.id) }}" target="_blank"
+                                class="btn btn-secondary" style="flex: 1; font-size: 0.75rem; padding: 0.5rem;"><i
+                                    data-lucide="file-type-2" style="width: 12px;"></i> PDF</a>
+                            <a href="{{ url_for('export_excel', view_type='classroom', id=r.id) }}"
+                                class="btn btn-secondary"
+                                style="flex: 1; font-size: 0.75rem; padding: 0.5rem; color: #166534; border-color: #dcfce7;"><i
+                                    data-lucide="file-spreadsheet" style="width: 12px;"></i> Excel</a>
+                            <a href="{{ url_for('export_word', view_type='classroom', id=r.id) }}"
+                                class="btn btn-secondary"
+                                style="flex: 1; font-size: 0.75rem; padding: 0.5rem; color: #2b579a; border-color: #e2e8f0;"><i
+                                    data-lucide="file-text" style="width: 12px;"></i> Word</a>
+                        </div>
+                        {% set grid_data = room_grids[r.id] %}
+                        {% with color_type='classroom' %}{% include "_timetable_grid.html" %}{% endwith %}
+                    </div>
+                </details>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Shared Rooms -->
+        <div>
+            <h5
+                style="font-size: 0.875rem; color: #64748b; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.5rem;">
+                <span
+                    style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.75rem;">SHARED</span>
+                Shared Facilities
+            </h5>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+                {% for r in classrooms if r.building == 'Both' %}
+                <details class="schedule-item card-link" data-type="classroom" data-name="{{ r.name }}"
+                    data-building="Both">
+                    <summary
+                        style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; cursor: pointer; color: var(--text-main); font-size: 0.9375rem;">
+                        <span>{{ r.name }}</span>
+                        <i data-lucide="chevron-down" style="width: 16px;"></i>
+                    </summary>
+                    <div style="margin-top: 1.5rem;">
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                            <a href="{{ url_for('export_pdf', view_type='classroom', id=r.id) }}" target="_blank"
+                                class="btn btn-secondary" style="flex: 1; font-size: 0.75rem; padding: 0.5rem;"><i
+                                    data-lucide="file-type-2" style="width: 12px;"></i> PDF</a>
+                            <a href="{{ url_for('export_excel', view_type='classroom', id=r.id) }}"
+                                class="btn btn-secondary"
+                                style="flex: 1; font-size: 0.75rem; padding: 0.5rem; color: #166534; border-color: #dcfce7;"><i
+                                    data-lucide="file-spreadsheet" style="width: 12px;"></i> Excel</a>
+                            <a href="{{ url_for('export_word', view_type='classroom', id=r.id) }}"
+                                class="btn btn-secondary"
+                                style="flex: 1; font-size: 0.75rem; padding: 0.5rem; color: #2b579a; border-color: #e2e8f0;"><i
+                                    data-lucide="file-text" style="width: 12px;"></i> Word</a>
+                        </div>
+                        {% set grid_data = room_grids[r.id] %}
+                        {% with color_type='classroom' %}{% include "_timetable_grid.html" %}{% endwith %}
+                    </div>
+                </details>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Conflict Details Modal -->
+<dialog id="conflictModal" class="card"
+    style="border: none; border-radius: 20px; padding: 0; width: 95%; max-width: 700px; box-shadow: var(--shadow-lg);">
+    <div
+        style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fffcf0;">
+        <h3 style="margin: 0; color: #9a3412; display: flex; align-items: center; gap: 0.75rem;">
+            <i data-lucide="scroll-text"></i> <span id="conflictModalTitle">Engine Diagnostics Log</span>
+        </h3>
+        <button onclick="document.getElementById('conflictModal').close()"
+            style="background: none; border: none; cursor: pointer; color: var(--text-muted);"><i
+                data-lucide="x"></i></button>
+    </div>
+    <div id="conflictLogContent" style="padding: 2rem; max-height: 500px; overflow-y: auto;">
+        {% if settings.get('conflict_log') %}
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            {% for log in settings.get('conflict_log').split(' | ') %}
+            <div
+                style="padding: 1rem; background: var(--bg-main); border-radius: 12px; font-size: 0.875rem; border-left: 4px solid #f97316; font-family: monospace;">
+                <i data-lucide="shield-check"
+                    style="width: 14px; vertical-align: middle; margin-right: 8px; color: #f97316;"></i> {{ log }}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 4rem 0;">
+            <i data-lucide="feather" style="width: 48px; opacity: 0.3; margin-bottom: 1rem;"></i>
+            <p style="color: var(--text-muted);">No conflict resolution traces found for the current build.</p>
+        </div>
+        {% endif %}
+    </div>
+</dialog>
+
+<style>
+    .explore-tab {
+        background: transparent;
+        color: var(--text-muted);
+        border: none;
+        padding: 0.625rem 1.25rem;
+        font-weight: 600;
+        font-size: 0.8125rem;
+        border-radius: 8px;
+        transition: var(--transition);
+    }
+
+    .explore-tab.active {
+        background: white;
+        color: var(--primary);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .schedule-item {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: var(--transition);
+    }
+
+    .schedule-item[open] {
+        grid-column: 1 / -1;
+        box-shadow: var(--shadow-md);
+    }
+
+    .schedule-item summary {
+        padding: 1.25rem;
+        list-style: none;
+    }
+
+    .schedule-item summary::-webkit-details-marker {
+        display: none;
+    }
+
+    #generatorOverlay {
+        position: absolute;
+        inset: 0;
+        background: var(--primary);
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        padding: 1.5rem;
+        z-index: 10;
+        border-radius: 12px;
+    }
+
+    dialog::backdrop {
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(4px);
+    }
+
+    .card-link {
+        cursor: pointer;
+    }
+
+    .card-link:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+    }
+
+    .pdf-page-break {
+        page-break-after: always;
+        height: 0;
+        overflow: hidden;
+    }
+
+    #bulk-print-container {
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        width: 1000px;
+    }
+</style>
+
+<!-- Export Libraries omitted since we are using Native Print -->
+
+<script>
+    // UI Logic
+
+    function switchExploreTab(type) {
+        document.querySelectorAll('.explore-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('tab-' + type).classList.add('active');
+
+        document.querySelectorAll('.explore-content').forEach(c => c.style.display = 'none');
+        document.getElementById(type + '-container').style.display = 'block';
+    }
+
+    function filterSchedules() {
+        let input = document.getElementById('scheduleSearch').value.toUpperCase();
+        let items = document.getElementsByClassName('schedule-item');
+        for (let i = 0; i < items.length; i++) {
+            let name = items[i].getAttribute('data-name').toUpperCase();
+            if (name.indexOf(input) > -1) items[i].style.display = "";
+            else items[i].style.display = "none";
+        }
+    }
+
+
+    // downloadAllPDFDirect removed in favor of Native Print View
+
+    // Async Schedule Generation
+    let pollInterval = null;
+
+    function startGeneration(phase = 'all') {
+        let confirmMsg = "Generate a new schedule? This will replace the current draft.";
+        if (phase === 'jhs') confirmMsg = "Generate JHS Phase? SHS assignments will be cleared.";
+        if (phase === 'shs') confirmMsg = "Generate SHS Phase? JHS assignments will stay LOCKED.";
+
+        if (!confirm(confirmMsg)) return;
+
+        const overlay = document.getElementById('generatorOverlay');
+        const mainUI = document.getElementById('generatorMainUI');
+
+        overlay.style.display = 'flex';
+        mainUI.style.opacity = '0.3';
+        mainUI.style.pointerEvents = 'none';
+
+        fetch('/admin/schedule/generate', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ phase: phase })
+        })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    pollProgress();
+                } else {
+                    showToast(res.error || "Failed to start generation", "error");
+                    resetGenUI();
+                }
+            })
+            .catch(err => {
+                showToast("Server Error: " + err, "error");
+                resetGenUI();
+            });
+    }
+
+    function pollProgress() {
+        pollInterval = setInterval(() => {
+            fetch('/admin/schedule/status')
+                .then(r => r.json())
+                .then(status => {
+                    updateGenUI(status);
+
+                    if (!status.running && status.progress === 100) {
+                        clearInterval(pollInterval);
+                        const res = status.last_result;
+                        if (res && res.success) {
+                            if (res.is_partial) {
+                                showToast(`Generated with ${res.conflicts} conflicts. Please check the log.`, "warning");
+                            } else {
+                                showToast("Schedule generated perfectly!", "success");
+                            }
+                            setTimeout(() => {
+                                if (window.navigateTo) navigateTo('/admin/setup');
+                                else location.reload();
+                            }, 2000);
+                        } else {
+                            if (res && res.is_cancelled) {
+                                showToast("Generation cancelled successfully.", "info");
+                            } else {
+                                const reason = res ? res.reason : "Unknown error";
+                                showToast("Generation failed: " + reason, "error");
+                            }
+                            resetGenUI();
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error("Poll error:", err);
+                });
+        }, 1000);
+    }
+
+    function updateGenUI(status) {
+        document.getElementById('genStatus').innerText = status.message || "Processing...";
+        document.getElementById('genProgressLabel').innerText = Math.round(status.progress) + "%";
+        document.getElementById('genProgressBar').style.width = status.progress + "%";
+
+        // Update live stats if available
+        if (status.time) document.getElementById('live_processing_time').innerText = status.time + "s";
+        if (status.conflicts) document.getElementById('live_conflicts').innerText = status.conflicts;
+    }
+
+    function resetGenUI() {
+        const overlay = document.getElementById('generatorOverlay');
+        const mainUI = document.getElementById('generatorMainUI');
+        overlay.style.display = 'none';
+        mainUI.style.opacity = '1';
+        mainUI.style.pointerEvents = 'auto';
+        if (pollInterval) clearInterval(pollInterval);
+    }
+
+    function cancelGeneration() {
+        if (!confirm("Are you sure you want to stop the AI engine? Work done so far might be lost.")) return;
+
+        const btn = event.currentTarget;
+        btn.disabled = true;
+        btn.innerText = "Stopping...";
+
+        fetch('/admin/schedule/cancel', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    showToast("Cancellation requested. Cleaning up...", "info");
+                } else {
+                    showToast(res.error || "Failed to cancel", "error");
+                    btn.disabled = false;
+                    btn.innerHTML = `<i data-lucide="x-circle" style="width: 12px; vertical-align: middle;"></i> Cancel`;
+                }
+            });
+    }
+
+    // Check if generation is already running on page load
+    fetch('/admin/schedule/status')
+        .then(r => r.json())
+        .then(status => {
+            if (status.running) {
+                document.getElementById('generatorOverlay').style.display = 'flex';
+                document.getElementById('generatorMainUI').style.opacity = '0.3';
+                pollProgress();
+            }
+        });
+
+    function showHistoryLog(runId) {
+        const modal = document.getElementById('conflictModal');
+        const title = document.getElementById('conflictModalTitle');
+        const content = document.getElementById('conflictLogContent');
+        const logStr = document.getElementById('log-data-' + runId).innerText;
+
+        title.innerText = `Diagnostics Log for Run #${runId}`;
+
+        if (!logStr || logStr.trim() === '') {
+            content.innerHTML = `
+                <div style="text-align: center; padding: 4rem 0;">
+                    <i data-lucide="feather" style="width: 48px; opacity: 0.3; margin-bottom: 1rem;"></i>
+                    <p style="color: var(--text-muted);">No logs found for this run.</p>
+                </div>`;
+        } else {
+            const logs = logStr.split(' | ');
+            let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
+            logs.forEach(msg => {
+                html += `
+                <div style="padding: 1rem; background: var(--bg-main); border-radius: 12px; font-size: 0.875rem; border-left: 4px solid #f97316; font-family: monospace;">
+                    <i data-lucide="shield-check" style="width: 14px; vertical-align: middle; margin-right: 8px; color: #f97316;"></i> ${msg}
+                </div>`;
+            });
+            html += '</div>';
+            content.innerHTML = html;
+        }
+
+        modal.showModal();
+        if (window.lucide) lucide.createIcons();
+    }
+
+    const BULK_URLS = {
+        excel: "{{ url_for('export_excel_bulk', view_type='PLACEHOLDER_V', filter_value='PLACEHOLDER_F') }}",
+        word: "{{ url_for('export_word_bulk', view_type='PLACEHOLDER_V', filter_value='PLACEHOLDER_F') }}",
+        pdf: "{{ url_for('export_pdf_bulk', view_type='PLACEHOLDER_V', filter_value='PLACEHOLDER_F') }}"
+    };
+
+    function handleBulkDownload(viewType, filterValue) {
+        const format = document.querySelector('input[name="bulkFormat"]:checked').value;
+        const title = `${format.toUpperCase()} Bulk Export`;
+        const baseUrl = BULK_URLS[format];
+        const url = baseUrl.replace('PLACEHOLDER_V', viewType).replace('PLACEHOLDER_F', filterValue);
+
+        handleServerDownload(url, title, format === 'pdf');
+    }
+
+    let exportActive = false;
+    let exportTimer = null;
+
+    function handleServerDownload(url, title, isPdf = false) {
+        if (exportTimer) clearInterval(exportTimer);
+        showExportOverlay(title, "Connecting to server...");
+        updateExportProgress(10, "Requesting data...");
+
+        let p = 10;
+        exportTimer = setInterval(() => {
+            p += 5;
+            if (p > 95) clearInterval(exportTimer);
+            updateExportProgress(p);
+        }, 300);
+
+        setTimeout(() => {
+            if (!exportActive) {
+                if (exportTimer) clearInterval(exportTimer);
+                return;
+            }
+            
+            if (isPdf) {
+                window.open(url, '_blank');
+                hideExportOverlay();
+                showToast("Bulk print view opened in new tab.", "success");
+            } else {
+                window.location.href = url;
+                setTimeout(() => {
+                    hideExportOverlay(false);
+                    showToast("Download started.", "success");
+                    exportActive = false;
+                }, 2000);
+            }
+        }, 1200);
+    }
+
+    function showExportOverlay(title, status) {
+        exportActive = true;
+        if (exportTimer) clearInterval(exportTimer);
+        document.getElementById('exportTitle').innerText = title;
+        document.getElementById('exportStatus').innerText = status;
+        document.getElementById('exportProgressBar').style.width = '0%';
+        document.getElementById('exportOverlay').style.display = 'flex';
+    }
+
+    function cancelExport() {
+        if (!exportActive) return;
+        exportActive = false;
+        if (exportTimer) clearInterval(exportTimer);
+        hideExportOverlay(false);
+        showToast("Export cancelled.", "info");
+    }
+
+    function updateExportProgress(percent, status) {
+        if (!exportActive) return;
+        document.getElementById('exportProgressBar').style.width = percent + '%';
+        if (status) document.getElementById('exportStatus').innerText = status;
+    }
+
+    function hideExportOverlay(resetActive = true) {
+        if (resetActive) exportActive = false;
+        if (exportTimer) clearInterval(exportTimer);
+        document.getElementById('exportOverlay').style.display = 'none';
+    }
+</script>
+{% endblock %}

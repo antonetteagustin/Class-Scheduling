@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ entity.name }} - Condensed Schedule</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary: #1e293b;
+            --text-main: #000;
+            --text-muted: #475569;
+            --bg-light: #f1f5f9;
+        }
+
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            line-height: 1.1; 
+            margin: 0; 
+            padding: 0;
+            color: var(--text-main); 
+            font-size: 8.5px; 
+            background: #fff;
+        }
+
+        .controls { 
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex; 
+            gap: 10px; 
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            z-index: 1000;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn { 
+            padding: 6px 14px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            border: none; 
+            font-size: 11px; 
+            font-weight: 600;
+            color: white; 
+            text-decoration: none; 
+        }
+
+        .btn-print { background: #475569; }
+        .btn-pdf { background: #2563eb; }
+        
+        @media print { 
+            .controls { display: none; } 
+            @page { size: A4 landscape; margin: 0.2in; }
+            body { padding: 0; margin: 0; }
+        }
+
+        #printableArea {
+            max-width: 11in;
+            margin: 0 auto;
+            padding: 10px;
+            min-height: 7.5in;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header { 
+            text-align: center; 
+            margin-bottom: 12px; 
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--text-main);
+        }
+
+        .header h1 { 
+            margin: 0; 
+            font-size: 17px; 
+            font-weight: 800; 
+            letter-spacing: -0.01em; 
+            text-transform: uppercase;
+        }
+
+        .header h2 { 
+            margin: 3px 0; 
+            font-size: 11px; 
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .header p { 
+            margin: 2px 0; 
+            font-size: 9px; 
+            font-weight: 600;
+        }
+
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            table-layout: fixed; 
+            border: 1.5px solid var(--text-main); 
+            flex-grow: 1;
+        }
+
+        th, td { 
+            border: 1px solid #000; 
+            padding: 4px 2px; 
+            text-align: center; 
+            vertical-align: middle; 
+            font-variant-numeric: tabular-nums;
+        }
+
+        th { 
+            background-color: var(--bg-light); 
+            font-weight: 800; 
+            font-size: 9px; 
+            text-transform: uppercase; 
+            letter-spacing: 0.05em;
+        }
+
+        .time-col { 
+            width: 85px; 
+            font-weight: 700; 
+            background: var(--bg-light); 
+            font-size: 8px; 
+        }
+
+        .break-cell { 
+            background: #f8fafc; 
+            font-size: 9px; 
+            font-weight: 800; 
+            color: #94a3b8; 
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .subject-title { 
+            font-weight: 800; 
+            font-size: 9px; 
+            margin-bottom: 1px;
+            line-height: 1;
+        }
+
+        .subject-meta { 
+            font-size: 7.5px; 
+            font-weight: 600; 
+            opacity: 0.8;
+            line-height: 1;
+        }
+        
+        .time-range {
+            font-size: 7px;
+            font-weight: 700;
+            opacity: 0.6;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .footer {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 8px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls" data-html2canvas-ignore="true">
+        <button class="btn btn-print" onclick="window.print()">Print</button>
+        <button class="btn btn-pdf" onclick="downloadPDF()">Export PDF</button>
+    </div>
+    
+    <div id="printableArea">
+        <div class="header">
+            <h1>{{ school_name }}</h1>
+            <h2>{{ school_year }}</h2>
+            
+            {% if view_type == 'section' %}
+            <p>
+                <strong>SECTION:</strong> {{ entity.name }} 
+                &nbsp;|&nbsp; 
+                <strong>GRADE:</strong> {{ entity.grade_level }} 
+                {% if entity.track %}&nbsp;|&nbsp; <strong>TRACK:</strong> {{ entity.track }}{% endif %}
+                &nbsp;|&nbsp; 
+                <strong>ADVISER:</strong> {{ entity.adviser.name if entity.adviser else 'TBA' }}
+            </p>
+            {% endif %}
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="time-col">Time Interval</th>
+                    {% for day in grid_data.days %}
+                    <th>{{ day }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for slot in grid_data.time_slots %}
+                <tr>
+                    <td class="time-col">
+                        {{ slot }} – {{ grid_data.slot_ranges[slot] }}
+                    </td>
+                    {% for day in grid_data.days %}
+                        {% if not grid_data.occupied[slot][day] %}
+                            {% set sch = grid_data.grid[slot][day] %}
+                            {% if sch in ['BREAK', 'LUNCH', 'VACANT'] %}
+                                {% set span = grid_data.spans[slot][day] %}
+                                <td rowspan="{{ span }}" class="break-cell">
+                                    <div style="font-weight: 800;">{{ sch }}</div>
+                                    <div style="font-size: 7px; opacity: 0.8; margin-top: 2px;">
+                                        {{ slot }} - {{ grid_data.slot_ranges[grid_data.time_slots[grid_data.time_slots.index(slot) + span - 1]] }}
+                                    </div>
+                                </td>
+                            {% elif sch %}
+                                <td rowspan="{{ grid_data.spans[slot][day] }}" style="background: #f8fafc; border-left: 3px solid #0f172a;">
+                                    <div class="subject-title">{{ sch.subject.name }}</div>
+                                    <div class="subject-meta">{{ sch.teacher.name }}</div>
+                                    <div class="subject-meta">RM: {{ sch.room.name }}</div>
+                                    <span class="time-range">{{ sch.start_time }} - {{ sch.end_time }}</span>
+                                </td>
+                            {% else %}
+                                <td rowspan="{{ grid_data.spans[slot][day] }}"></td>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <span>Generation Time: {{ last_setup_time }}</span>
+            <span>Generated by AI Scheduling System | {{ school_name }}</span>
+            <span>Page 1 of 1</span>
+        </div>
+    </div>
+
+    <script>
+        async function downloadPDF() {
+            const element = document.getElementById('printableArea');
+            const btn = document.querySelector('.btn-pdf');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "Generating...";
+
+            // Save scroll position
+            const scrollX = window.scrollX;
+            const scrollY = window.scrollY;
+            window.scrollTo(0, 0);
+
+            try {
+                const opt = {
+                    margin: [0.3, 0.3],
+                    filename: 'Condensed_Schedule_{{ entity.name }}.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { 
+                        scale: 2, 
+                        useCORS: true,
+                        scrollY: 0,
+                        scrollX: 0,
+                        backgroundColor: '#ffffff'
+                    },
+                    jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+                };
+                
+                // Small delay to ensure browser re-renders at 0,0
+                await new Promise(r => setTimeout(r, 100));
+                await html2pdf().set(opt).from(element).save();
+            } finally {
+                // Restore scroll position
+                window.scrollTo(scrollX, scrollY);
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+    </script>
+</body>
+</html>

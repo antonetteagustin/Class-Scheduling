@@ -1,0 +1,28 @@
+ID: 1 | Name: Teacher 1_J | Dept: JHS | Hybrid: False | GL: 7,9 | Subs: AP
+ID: 2 | Name: Teacher 2_J | Dept: JHS | Hybrid: False | GL: 8,10 | Subs: AP
+ID: 3 | Name: Teacher 3_J | Dept: JHS | Hybrid: False | GL: 7,9 | Subs: English
+ID: 4 | Name: Teacher 4_J | Dept: JHS | Hybrid: False | GL: 7,9 | Subs: Math
+ID: 5 | Name: Teacher 5_J | Dept: JHS | Hybrid: False | GL: 7,9 | Subs: Filipino
+ID: 6 | Name: Teacher 6_J | Dept: JHS | Hybrid: False | GL: 7,9 | Subs: MAPEH
+ID: 7 | Name: Teacher 7_J | Dept: JHS | Hybrid: False | GL: 7,9 | Subs: ESP
+ID: 8 | Name: Teacher 8_J | Dept: JHS | Hybrid: False | GL: 7,9 | Subs: TLE
+ID: 9 | Name: Teacher 9_J | Dept: JHS | Hybrid: False | GL: 7,9 | Subs: Science
+ID: 10 | Name: Teacher 10_J | Dept: JHS | Hybrid: False | GL: 7,9 | Subs: Science
+ID: 11 | Name: Teacher 1_S | Dept: SHS | Hybrid: False | GL: 11 STEM,12 STEM | Subs: Physics
+ID: 12 | Name: Teacher 2_S | Dept: SHS | Hybrid: False | GL: 11 TVL-ICT,12 TVL-ICT | Subs: Programming
+ID: 13 | Name: Teacher 3_S | Dept: SHS | Hybrid: False | GL: 11 HUMSS,12 HUMSS | Subs: Language
+ID: 14 | Name: Teacher 4_S | Dept: SHS | Hybrid: False | GL: 11 STEM | Subs: Physics
+ID: 15 | Name: Teacher 5_S | Dept: SHS | Hybrid: False | GL: 11 HUMSS | Subs: Language
+ID: 16 | Name: Teacher 6_S | Dept: SHS | Hybrid: False | GL: 11 TVL-ICT | Subs: Programming
+ID: 17 | Name: Teacher 7_S | Dept: SHS | Hybrid: False | GL: 11 | Subs: KOMPAN
+ID: 18 | Name: Teacher 8_S | Dept: SHS | Hybrid: False | GL: 11 | Subs: EALS
+ID: 19 | Name: Teacher 9_S | Dept: SHS | Hybrid: False | GL: 12 | Subs: FILDIS
+ID: 20 | Name: Teacher 10_S | Dept: SHS | Hybrid: False | GL: 12 | Subs: Religion
+ID: 23 | Name: Teacher 11_J | Dept: JHS | Hybrid: False | GL: 8,10 | Subs: AP
+ID: 24 | Name: Teacher 12_J | Dept: JHS | Hybrid: False | GL: 8,10 | Subs: English
+ID: 25 | Name: Teacher 13_J | Dept: JHS | Hybrid: False | GL: 8,10 | Subs: ESP
+ID: 26 | Name: Teacher 14_J | Dept: JHS | Hybrid: False | GL: 8,10 | Subs: Filipino
+ID: 27 | Name: Teacher 15_J | Dept: JHS | Hybrid: False | GL: 8,10 | Subs: MAPEH
+ID: 28 | Name: Teacher 16_J | Dept: JHS | Hybrid: False | GL: 8,10 | Subs: Math
+ID: 29 | Name: Teacher 17_J | Dept: JHS | Hybrid: False | GL: 8,10 | Subs: Science
+ID: 30 | Name: Teacher 18_J | Dept: JHS | Hybrid: False | GL: 8,10 | Subs: TLE

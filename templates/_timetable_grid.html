@@ -1,0 +1,82 @@
+<div class="table-wrapper" style="border-radius: 12px; border: 1px solid var(--border); overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.75rem; table-layout: fixed; background: white;">
+        <thead>
+            <tr style="background: var(--bg-main);">
+                <th style="padding: 12px; border: 1px solid var(--border); width: 80px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.625rem; letter-spacing: 0.05em;">Time</th>
+                {% for day in grid_data.days %}
+                <th style="padding: 12px; border: 1px solid var(--border); color: var(--text-main); font-weight: 700; text-transform: uppercase; font-size: 0.625rem; letter-spacing: 0.05em;">{{ day }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for slot in grid_data.time_slots %}
+            <tr>
+                <td style="padding: 0; border: 1px solid var(--border); background: var(--bg-main); text-align: center; vertical-align: top; position: relative; width: 80px; height: 35px;">
+                    <div style="position: absolute; top: -0.6em; left: 0; right: 0; font-weight: 700; font-size: 0.6875rem; color: var(--text-muted); font-variant-numeric: tabular-nums; z-index: 10;">
+                        <span style="background: var(--bg-main); padding: 0 4px; border-radius: 4px;">{{ slot }}</span>
+                    </div>
+                </td>
+                {% for day in grid_data.days %}
+                    {% if not grid_data.occupied[slot][day] %}
+                        {% set sch = grid_data.grid[slot][day] %}
+                        {% if sch in ['BREAK', 'LUNCH', 'VACANT'] %}
+                            {% set span = grid_data.spans[slot][day] %}
+                            <td rowspan="{{ span }}" style="padding: 4px; border: 1px solid var(--border); background: #f8fafc; color: #94a3b8; text-align: center; font-size: 0.625rem; font-weight: 800; opacity: 0.8; vertical-align: middle;">
+                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+                                    <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+                                        {% if sch == 'BREAK' %}
+                                            <i data-lucide="coffee" style="width: 12px; height: 12px;"></i> 
+                                        {% elif sch == 'LUNCH' %}
+                                            <i data-lucide="utensils" style="width: 12px; height: 12px;"></i>
+                                        {% else %}
+                                            <i data-lucide="calendar-x" style="width: 12px; height: 12px;"></i>
+                                        {% endif %}
+                                        <span>{{ sch }}</span>
+                                    </div>
+                                    <div style="font-size: 0.55rem; opacity: 0.7; font-weight: 700; font-variant-numeric: tabular-nums;">
+                                        {{ slot }} - {{ grid_data.slot_ranges[grid_data.time_slots[grid_data.time_slots.index(slot) + span - 1]] }}
+                                    </div>
+                                </div>
+                            </td>
+                        {% elif sch and sch.subject %}
+                            {% set is_tba = (not sch.teacher or sch.teacher.name == 'TBA') %}
+                            {% set bg = '#fee2e2' if is_tba else ('#f0fdf4' if color_type == 'section' else ('#f0f9ff' if color_type == 'teacher' else '#fffbeb')) %}
+                            {% set co = '#166534' if is_tba else ('#0369a1' if color_type == 'teacher' else '#92400e') %}
+                            
+                            <td rowspan="{{ grid_data.spans[slot][day] }}" style="padding: 6px; border: 1px solid var(--border); background: {{ bg }}; color: {{ co }}; vertical-align: middle; text-align: center; border-left: 3px solid {{ co }};">
+                                <div style="font-weight: 800; margin-bottom: 2px; line-height: 1.2; font-size: 0.75rem;">{{ sch.subject.name }}</div>
+                                <div style="font-size: 0.625rem; font-weight: 600; opacity: 0.8; margin-bottom: 3px;">
+                                    <i data-lucide="{{ 'user' if color_type == 'section' else 'users' }}" style="width: 10px; vertical-align: middle;"></i> 
+                                    {{ (sch.teacher.name if sch.teacher else 'TBA') if color_type == 'section' else (sch.section.name if sch.section else 'TBA') }}
+                                </div>
+                                <div style="font-size: 0.625rem; font-weight: 700; opacity: 0.6; font-variant-numeric: tabular-nums;">{{ sch.start_time }} - {{ sch.end_time }}</div>
+                                {% if sch.is_soft_break_override %}
+                                <div style="font-size: 0.55rem; color: var(--text-muted); opacity: 0.7; font-weight: 700; margin-top: 2px;">(Break Override)</div>
+                                {% endif %}
+                            </td>
+                        {% else %}
+                            <td style="border: 1px solid var(--border);"></td>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+            <!-- Final Inclusive End-Tick Marker -->
+            {% if grid_data.time_slots %}
+            <tr>
+                <td style="padding: 0; border-top: 1px solid var(--border); background: var(--bg-main); text-align: center; vertical-align: top; position: relative; width: 80px; height: 1px;">
+                    <div style="position: absolute; top: -0.6em; left: 0; right: 0; font-weight: 700; font-size: 0.6875rem; color: var(--text-muted); font-variant-numeric: tabular-nums; z-index: 10;">
+                        <span style="background: var(--bg-main); padding: 0 4px; border-radius: 4px;">
+                            {{ grid_data.slot_ranges[grid_data.time_slots[-1]] }}
+                        </span>
+                    </div>
+                </td>
+                {% for day in grid_data.days %}
+                <td style="border-top: 1px solid var(--border); height: 1px;"></td>
+                {% endfor %}
+            </tr>
+            {% endif %}
+        </tbody>
+        </tbody>
+    </table>
+</div>

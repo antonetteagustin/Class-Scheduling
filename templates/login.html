@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block login_content %}
+<div class="login-body">
+    <div class="card" style="width: 100%; max-width: 440px; padding: 2.5rem; border-radius: 24px; box-shadow: var(--glass-shadow); background: rgba(255, 255, 255, 0.9);">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="width: 56px; height: 56px; background: var(--primary); border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; color: white; margin-bottom: 1.5rem; box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);">
+                <i data-lucide="key-round" style="width: 28px; height: 28px;"></i>
+            </div>
+            <h2 style="font-size: 1.75rem; margin-bottom: 0.5rem; letter-spacing: -0.02em;">Welcome Back</h2>
+            <p style="color: var(--text-muted); font-size: 0.9375rem;">Access the AI Scheduling System for <br><strong>{{ school_name }}</strong></p>
+        </div>
+
+        <form method="POST" action="{{ url_for('login') }}">
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main);">Access Role</label>
+                <div style="position: relative;">
+                    <select name="role" id="role" required style="width: 100%; padding: 0.875rem 1rem; padding-left: 2.75rem; border: 1px solid var(--border); border-radius: 14px; appearance: none; background: white; font-size: 0.9375rem; font-family: inherit; transition: var(--transition);">
+                        <option value="admin">Administrator</option>
+                        <option value="teacher">Faculty Member</option>
+                        <option value="student">Student Learner</option>
+                    </select>
+                    <i data-lucide="shield-check" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--text-muted);"></i>
+                    <i data-lucide="chevron-down" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted); pointer-events: none;"></i>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main);">Username</label>
+                <div style="position: relative;">
+                    <input type="text" id="username" name="username" required placeholder="Enter your ID" style="width: 100%; padding: 0.875rem 1rem; padding-left: 2.75rem; border: 1px solid var(--border); border-radius: 14px; font-size: 0.9375rem; font-family: inherit; transition: var(--transition);">
+                    <i data-lucide="user" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--text-muted);"></i>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main);">Password</label>
+                <div style="position: relative;">
+                    <input type="password" id="password" name="password" required placeholder="••••••••" style="width: 100%; padding: 0.875rem 1rem; padding-left: 2.75rem; padding-right: 2.75rem; border: 1px solid var(--border); border-radius: 14px; font-size: 0.9375rem; font-family: inherit; transition: var(--transition);">
+                    <i data-lucide="lock" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--text-muted);"></i>
+                    <button type="button" id="togglePassword" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 0; display: flex; align-items: center; transition: color 0.2s;">
+                        <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; border-radius: 14px; font-size: 1rem; margin-bottom: 1rem;">
+                Sign In
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Initialize icons on the login page specifically since it's outside the main wrapper
+    lucide.createIcons();
+    
+    // Add focus effects manually since we're using raw styles for some parts
+    const inputs = document.querySelectorAll('input, select');
+    inputs.forEach(input => {
+        input.addEventListener('focus', () => {
+            input.style.borderColor = 'var(--primary)';
+            input.style.boxShadow = '0 0 0 4px rgba(99, 102, 241, 0.1)';
+        });
+        input.addEventListener('blur', () => {
+            input.style.borderColor = 'var(--border)';
+            input.style.boxShadow = 'none';
+        });
+    });
+
+    // Toggle Password Visibility
+    const togglePassword = document.querySelector('#togglePassword');
+    const password = document.querySelector('#password');
+
+    togglePassword.addEventListener('click', function (e) {
+        // toggle the type attribute
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+        
+        // toggle the eye icon
+        this.innerHTML = type === 'password' 
+            ? '<i data-lucide="eye" style="width: 18px; height: 18px;"></i>' 
+            : '<i data-lucide="eye-off" style="width: 18px; height: 18px;"></i>';
+        
+        lucide.createIcons();
+        
+        // Change color based on state
+        this.style.color = type === 'password' ? 'var(--text-muted)' : 'var(--primary)';
+    });
+</script>
+{% endblock %}

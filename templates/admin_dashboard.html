@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="dashboard-header" style="margin-bottom: 3rem;">
+    <h1 style="font-size: 2.25rem; margin-bottom: 0.5rem;">Admin Dashboard</h1>
+    <p style="color: var(--text-muted); font-size: 1.125rem;">Command center for schedule management and school data.</p>
+</div>
+
+<div class="stats-grid">
+    <div class="card stat-card">
+        <div class="stat-icon"><i data-lucide="users"></i></div>
+        <div>
+            <p style="font-size: 0.875rem; color: var(--text-muted); font-weight: 600;">Teachers</p>
+            <h3 style="font-size: 1.5rem;">{{ teachers|length }}</h3>
+        </div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon" style="background: #fef3c7; color: #d97706;"><i data-lucide="layers"></i></div>
+        <div>
+            <p style="font-size: 0.875rem; color: var(--text-muted); font-weight: 600;">Sections</p>
+            <h3 style="font-size: 1.5rem;">{{ sections|length }}</h3>
+        </div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon" style="background: #dcfce7; color: #16a34a;"><i data-lucide="building"></i></div>
+        <div>
+            <p style="font-size: 0.875rem; color: var(--text-muted); font-weight: 600;">Classrooms</p>
+            <h3 style="font-size: 1.5rem;">{{ classrooms|length }}</h3>
+        </div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon" style="background: #fae8ff; color: #a21caf;"><i data-lucide="book-open"></i></div>
+        <div>
+            <p style="font-size: 0.875rem; color: var(--text-muted); font-weight: 600;">Subjects</p>
+            <h3 style="font-size: 1.5rem;">{{ subjects|length }}</h3>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+    <!-- Main Actions -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="width: 40px; height: 40px; background: var(--primary-light); color: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
+                    <i data-lucide="zap"></i>
+                </div>
+                <h3 style="margin-bottom: 0.75rem;">AI Scheduler</h3>
+                <p style="color: var(--text-muted); font-size: 0.9375rem; margin-bottom: 1.5rem;">Run the constraint-based engine to generate optimized timetables for the entire school.</p>
+            </div>
+            <a href="{{ url_for('admin_setup') }}" class="btn btn-primary" style="width: fit-content;">Open Setup & Generate</a>
+        </div>
+    </div>
+    
+    <!-- Info Column -->
+    <div class="card" style="padding: 1.5rem; background: #f8fafc; border-style: dashed;">
+        <h4 style="margin-bottom: 1rem;"><i data-lucide="rocket" style="width: 20px; color: var(--primary);"></i> Operational Monitoring</h4>
+        <p style="font-size: 0.875rem; line-height: 1.6; color: var(--text-muted);">
+            The dashboard provides real-time oversight of school resources. All generation and export operations have been consolidated within the <strong>Setup & Generation</strong> command center.
+        </p>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="width: 40px; height: 40px; background: #e0f2fe; color: #0369a1; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
+                <i data-lucide="settings"></i>
+            </div>
+            <h3 style="margin-bottom: 0.75rem;">System Configuration</h3>
+            <p style="color: var(--text-muted); font-size: 0.9375rem; margin-bottom: 1.5rem;">Adjust shift timings, break durations, and other global scheduling parameters.</p>
+        </div>
+        <a href="{{ url_for('admin_settings') }}" class="btn btn-secondary" style="width: fit-content;">System Settings</a>
+    </div>
+
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="width: 40px; height: 40px; background: #fee2e2; color: #b91c1c; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
+                <i data-lucide="shield"></i>
+            </div>
+            <h3 style="margin-bottom: 0.75rem;">Access Management</h3>
+            <p style="color: var(--text-muted); font-size: 0.9375rem; margin-bottom: 1.5rem;">Manage user credentials and reset passwords for faculty and students.</p>
+        </div>
+        <a href="{{ url_for('admin_change_password') }}" class="btn btn-secondary" style="width: fit-content;">Manage Passwords</a>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    });
+</script>
+{% endblock %}
