@@ -298,10 +298,33 @@ tr:hover td {
 @media (max-width: 1024px) {
     .sidebar {
         transform: translateX(-100%);
+        box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+    }
+    .sidebar.sidebar-open {
+        transform: translateX(0);
     }
     .main-content {
         margin-left: 0;
     }
+    #sidebar-toggle {
+        display: inline-flex !important;
+    }
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 45;
+}
+
+.sidebar-overlay.active {
+    display: block;
 }
 
 /* Modals - Premium Centered Overlay */

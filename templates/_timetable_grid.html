@@ -9,7 +9,19 @@
             </tr>
         </thead>
         <tbody>
+            {% set shift_start = grid_data.shift_start_m if grid_data.shift_start_m is defined else 0 %}
+            {% set shift_end = grid_data.shift_end_m if grid_data.shift_end_m is defined else 1440 %}
+            
+            {% set ns = namespace(visible_slots=[]) %}
             {% for slot in grid_data.time_slots %}
+                {% set parts = slot.split(':') %}
+                {% set slot_m = (parts[0]|int * 60) + (parts[1]|int) %}
+                {% if slot_m >= shift_start and slot_m < shift_end %}
+                    {% set ns.visible_slots = ns.visible_slots + [slot] %}
+                {% endif %}
+            {% endfor %}
+
+            {% for slot in ns.visible_slots %}
             <tr>
                 <td style="padding: 0; border: 1px solid var(--border); background: var(--bg-main); text-align: center; vertical-align: top; position: relative; width: 80px; height: 35px;">
                     <div style="position: absolute; top: -0.6em; left: 0; right: 0; font-weight: 700; font-size: 0.6875rem; color: var(--text-muted); font-variant-numeric: tabular-nums; z-index: 10;">
@@ -62,12 +74,12 @@
             </tr>
             {% endfor %}
             <!-- Final Inclusive End-Tick Marker -->
-            {% if grid_data.time_slots %}
+            {% if ns.visible_slots %}
             <tr>
                 <td style="padding: 0; border-top: 1px solid var(--border); background: var(--bg-main); text-align: center; vertical-align: top; position: relative; width: 80px; height: 1px;">
                     <div style="position: absolute; top: -0.6em; left: 0; right: 0; font-weight: 700; font-size: 0.6875rem; color: var(--text-muted); font-variant-numeric: tabular-nums; z-index: 10;">
                         <span style="background: var(--bg-main); padding: 0 4px; border-radius: 4px;">
-                            {{ grid_data.slot_ranges[grid_data.time_slots[-1]] }}
+                            {{ grid_data.slot_ranges[ns.visible_slots[-1]] }}
                         </span>
                     </div>
                 </td>
