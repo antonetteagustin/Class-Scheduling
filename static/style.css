@@ -38,6 +38,10 @@ body {
     overflow-x: hidden;
 }
 
+img, video, canvas, svg {
+    max-width: 100%;
+}
+
 /* Typography Hierarchy */
 h1, h2, h3, h4 {
     font-weight: 700;
@@ -350,8 +354,8 @@ tr:hover td {
         padding: 1.5rem;
     }
 
-    /* Common 2-column admin layouts (e.g. setup dashboard grid) */
-    .page-container > div[style*="grid-template-columns: 1fr 2fr"] {
+    /* Inline grid layouts in templates: stack on smaller screens */
+    .page-container [style*="display: grid"][style*="grid-template-columns"] {
         grid-template-columns: 1fr !important;
     }
 }
@@ -376,9 +380,27 @@ tr:hover td {
         border-radius: 12px;
     }
 
+    /* Inline flex rows in templates: allow wrapping on narrow screens */
+    .page-container [style*="display: flex"] {
+        flex-wrap: wrap;
+    }
+
     /* Tables (including timetable previews): scroll instead of squish */
     .table-wrapper table {
         min-width: 720px;
+    }
+
+    /* Toasts: avoid forcing horizontal overflow on small screens */
+    #toast-container {
+        left: 16px !important;
+        right: 16px !important;
+        top: 16px !important;
+    }
+
+    #toast-container .card {
+        min-width: 0 !important;
+        width: 100%;
+        max-width: 100%;
     }
 
     /* Make search inputs and form controls behave on narrow screens */
