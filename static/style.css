@@ -364,6 +364,29 @@ tr:hover td {
         flex-wrap: wrap;
         min-width: 0;
     }
+
+    /* Tablet-only: Grouped Data Export panel containment + wrapping
+       This panel is a `.card` with inline `min-height: 280px; justify-content: center;` in `admin_setup.html`.
+       On tablets, its internal `justify-content: space-between` rows can overflow when controls don't wrap. */
+    .page-container .card[style*="min-height: 280px"][style*="justify-content: center"] {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    .page-container .card[style*="min-height: 280px"][style*="justify-content: center"] [style*="display: flex"] {
+        flex-wrap: wrap;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .page-container .card[style*="min-height: 280px"][style*="justify-content: center"] label,
+    .page-container .card[style*="min-height: 280px"][style*="justify-content: center"] button,
+    .page-container .card[style*="min-height: 280px"][style*="justify-content: center"] small,
+    .page-container .card[style*="min-height: 280px"][style*="justify-content: center"] span {
+        min-width: 0;
+        max-width: 100%;
+        white-space: normal;
+    }
 }
 
 @media (max-width: 768px) {
