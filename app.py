@@ -2298,7 +2298,7 @@ def admin_setup():
     
     section_grids = {s.id: prepare_schedule_grid(s.id, 'section', schedules, force_start=g_start, force_end=g_end) for s in sections}
     teacher_grids = {t.id: prepare_schedule_grid(t.id, 'teacher', schedules, force_start=g_start, force_end=g_end) for t in teachers}
-    room_grids = {r.id: prepare_schedule_grid(r.id, 'room', schedules, force_start=g_start, force_end=g_end) for r in classrooms}
+    room_grids = {r.id: prepare_schedule_grid(r.id, 'classroom', schedules, force_start=g_start, force_end=g_end) for r in classrooms}
 
     return render_template('admin_setup.html', settings=settings, 
                            sections=sections, teachers=teachers, classrooms=classrooms,
