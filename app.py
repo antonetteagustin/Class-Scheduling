@@ -1802,9 +1802,11 @@ def prepare_schedule_grid(entity_id, view_type, schedules, force_start=None, for
         if assigned_sec_ids:
             rm_min_m = time_to_min('18:00')
             rm_max_m = time_to_min('06:00')
+            assigned_depts = set()
             for sid in assigned_sec_ids:
                 sec = Section.query.get(sid)
                 if sec:
+                    assigned_depts.add(sec.department)
                     st, en = get_shift_bounds(sec.department, sec.grade_level)
                     st_m, en_m = time_to_min(st), time_to_min(en)
                     if st_m < rm_min_m: rm_min_m = st_m
@@ -1819,7 +1821,25 @@ def prepare_schedule_grid(entity_id, view_type, schedules, force_start=None, for
         entity_shift_s = min_to_time(abs_min_m)
         entity_shift_e = min_to_time(abs_max_m)
 
-        if classroom and classroom.building == 'SHS':
+        # Break injection for Classroom view:
+        # - `break_times` is used on non-special days (special-day logic handled below per-day).
+        # - Previously, SHS breaks were included but JHS breaks were not, causing missing breaks for JHS classrooms.
+        if assigned_sec_ids:
+            # Prefer actual assigned sections' departments when available.
+            has_jhs = 'JHS' in assigned_depts
+            has_shs = 'SHS' in assigned_depts
+        else:
+            # Fall back to classroom building when no schedules exist.
+            has_jhs = bool(classroom and classroom.building in ['JHS', 'Both'])
+            has_shs = bool(classroom and classroom.building in ['SHS', 'Both'])
+        
+        if has_jhs:
+            if settings_dict.get('jhs_am_break_start') and settings_dict.get('jhs_am_break_end'):
+                break_times.append((settings_dict['jhs_am_break_start'], settings_dict['jhs_am_break_end']))
+            if settings_dict.get('jhs_pm_break_start') and settings_dict.get('jhs_pm_break_end'):
+                break_times.append((settings_dict['jhs_pm_break_start'], settings_dict['jhs_pm_break_end']))
+        
+        if has_shs:
             b_s = settings_dict.get('shs_break_start', '09:30')
             b_e = settings_dict.get('shs_break_end', '10:00')
             l_s = settings_dict.get('shs_lunch_start', '12:00')

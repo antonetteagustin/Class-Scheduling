@@ -23,7 +23,7 @@ with app.app_context():
         for t in teachers:
              prepare_schedule_grid(t.id, 'teacher', schedules)
         for r in classrooms:
-             prepare_schedule_grid(r.id, 'room', schedules)
+             prepare_schedule_grid(r.id, 'classroom', schedules)
              
         print("Backend logic completed successfully.")
         

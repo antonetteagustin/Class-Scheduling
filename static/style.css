@@ -178,6 +178,7 @@ h1, h2, h3, h4 {
     max-width: 1400px;
     margin: 0 auto;
     width: 100%;
+    min-width: 0;
 }
 
 /* Cards & Components */
@@ -188,6 +189,7 @@ h1, h2, h3, h4 {
     padding: 1.5rem;
     box-shadow: var(--shadow-sm);
     transition: var(--transition);
+    min-width: 0;
 }
 
 .card:hover {
@@ -217,6 +219,8 @@ h1, h2, h3, h4 {
     transition: var(--transition);
     border: none;
     text-decoration: none;
+    min-height: 44px;
+    touch-action: manipulation;
 }
 
 .btn-primary {
@@ -246,8 +250,11 @@ h1, h2, h3, h4 {
     background: white;
     border-radius: 16px;
     border: 1px solid var(--border);
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     margin-top: 1rem;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
 }
 
 table {
@@ -333,6 +340,50 @@ tr:hover td {
     }
     #sidebar-toggle {
         display: inline-flex !important;
+    }
+
+    .topbar {
+        padding: 0 1.25rem;
+    }
+
+    .page-container {
+        padding: 1.5rem;
+    }
+
+    /* Common 2-column admin layouts (e.g. setup dashboard grid) */
+    .page-container > div[style*="grid-template-columns: 1fr 2fr"] {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .topbar {
+        padding: 0 1rem;
+    }
+
+    .page-container {
+        padding: 1rem;
+    }
+
+    .card {
+        padding: 1rem;
+        border-radius: 16px;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+    }
+
+    /* Tables (including timetable previews): scroll instead of squish */
+    .table-wrapper table {
+        min-width: 720px;
+    }
+
+    /* Make search inputs and form controls behave on narrow screens */
+    input, select, textarea {
+        max-width: 100%;
     }
 }
 
