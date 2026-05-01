@@ -358,6 +358,12 @@ tr:hover td {
     .page-container [style*="display: grid"][style*="grid-template-columns"] {
         grid-template-columns: 1fr !important;
     }
+
+    /* Tablet fix: allow toolbars/option rows (e.g. Grouped Data Export) to wrap */
+    .page-container [style*="display: flex"] {
+        flex-wrap: wrap;
+        min-width: 0;
+    }
 }
 
 @media (max-width: 768px) {
@@ -380,14 +386,23 @@ tr:hover td {
         border-radius: 12px;
     }
 
-    /* Inline flex rows in templates: allow wrapping on narrow screens */
-    .page-container [style*="display: flex"] {
-        flex-wrap: wrap;
+    /* Timetable/table previews: inline styles set overflow:hidden; force scroll instead */
+    .table-wrapper {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
     }
 
     /* Tables (including timetable previews): scroll instead of squish */
     .table-wrapper table {
         min-width: 720px;
+    }
+
+    /* If a table is using fixed layout inline (e.g. timetable preview), keep natural width */
+    .table-wrapper table[style*="table-layout: fixed"] {
+        width: max-content;
+        table-layout: auto;
     }
 
     /* Toasts: avoid forcing horizontal overflow on small screens */
