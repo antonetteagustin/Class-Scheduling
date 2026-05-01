@@ -64,6 +64,9 @@
                     <a href="{{ url_for('admin_settings') }}" class="nav-item">
                         <i data-lucide="settings"></i> Settings
                     </a>
+                    <a href="{{ url_for('admin_change_password') }}" class="nav-item">
+                        <i data-lucide="shield"></i> Access Management
+                    </a>
                 {% elif current_user.role == 'teacher' %}
                     <a href="{{ url_for('teacher_dashboard') }}" class="nav-item">
                         <i data-lucide="layout-dashboard"></i> Dashboard

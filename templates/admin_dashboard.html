@@ -38,31 +38,18 @@
     </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-    <!-- Main Actions -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
-        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
-            <div>
-                <div style="width: 40px; height: 40px; background: var(--primary-light); color: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
-                    <i data-lucide="zap"></i>
-                </div>
-                <h3 style="margin-bottom: 0.75rem;">AI Scheduler</h3>
-                <p style="color: var(--text-muted); font-size: 0.9375rem; margin-bottom: 1.5rem;">Run the constraint-based engine to generate optimized timetables for the entire school.</p>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="width: 40px; height: 40px; background: var(--primary-light); color: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
+                <i data-lucide="zap"></i>
             </div>
-            <a href="{{ url_for('admin_setup') }}" class="btn btn-primary" style="width: fit-content;">Open Setup & Generate</a>
+            <h3 style="margin-bottom: 0.75rem;">AI Scheduler</h3>
+            <p style="color: var(--text-muted); font-size: 0.9375rem; margin-bottom: 1.5rem;">Run the constraint-based engine to generate optimized timetables for the entire school.</p>
         </div>
+        <a href="{{ url_for('admin_setup') }}" class="btn btn-primary" style="width: fit-content;">Open Setup & Generate</a>
     </div>
-    
-    <!-- Info Column -->
-    <div class="card" style="padding: 1.5rem; background: #f8fafc; border-style: dashed;">
-        <h4 style="margin-bottom: 1rem;"><i data-lucide="rocket" style="width: 20px; color: var(--primary);"></i> Operational Monitoring</h4>
-        <p style="font-size: 0.875rem; line-height: 1.6; color: var(--text-muted);">
-            The dashboard provides real-time oversight of school resources. All generation and export operations have been consolidated within the <strong>Setup & Generation</strong> command center.
-        </p>
-    </div>
-</div>
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
     <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
         <div>
             <div style="width: 40px; height: 40px; background: #e0f2fe; color: #0369a1; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
